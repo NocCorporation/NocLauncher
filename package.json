@@ -1,0 +1,56 @@
+{
+  "name": "noclauncher",
+  "version": "1.0.0",
+  "description": "NocLauncher — multi-functional Minecraft launcher (Electron)",
+  "main": "src/main/main.js",
+  "author": "NOCTRAZE",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dev": "set NODE_ENV=development&& electron .",
+    "build:win": "electron-builder --win --x64",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.10",
+    "electron-store": "^8.2.0",
+    "graceful-fs": "^4.2.11",
+    "minecraft-launcher-core": "^3.18.0",
+    "msmc": "^5.0.5",
+    "node-fetch": "^3.3.2",
+    "prismarine-nbt": "^2.8.0",
+    "archiver": "^7.0.1",
+    "unzipper": "^0.12.3",
+    "prismarine-auth": "^2.6.0"
+  },
+  "devDependencies": {
+    "electron": "^29.4.5",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "org.noctraze.noclauncher",
+    "productName": "NocLauncher",
+    "directories": {
+      "buildResources": "assets",
+      "output": "dist"
+    },
+    "files": [
+      "src/main/main.js",
+      "src/preload/preload.js",
+      "src/renderer/**/*",
+      "assets/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false
+    }
+  },
+  "type": "commonjs"
+}

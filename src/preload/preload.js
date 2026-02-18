@@ -1,0 +1,136 @@
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('noc', {
+  settingsGet: () => ipcRenderer.invoke('settings:get'),
+  settingsSet: (patch) => ipcRenderer.invoke('settings:set', patch),
+
+instancesList: () => ipcRenderer.invoke('instances:list'),
+instanceSetActive: (id) => ipcRenderer.invoke('instances:setActive', id),
+instanceCreate: (name) => ipcRenderer.invoke('instances:create', name),
+instanceClone: (payload) => ipcRenderer.invoke('instances:clone', payload),
+wizardAutoSetup: (payload) => ipcRenderer.invoke('wizard:autoSetup', payload),
+mcRepair: (payload) => ipcRenderer.invoke('mc:repair', payload),
+mcFix: (payload) => ipcRenderer.invoke('mc:fix', payload),
+snapshotsCreate: (note) => ipcRenderer.invoke('snapshots:create', note),
+snapshotsList: () => ipcRenderer.invoke('snapshots:list'),
+snapshotsRestore: (id) => ipcRenderer.invoke('snapshots:restore', id),
+instanceExportZip: () => ipcRenderer.invoke('instance:exportZip'),
+instanceImportDotMinecraft: () => ipcRenderer.invoke('instance:importDotMinecraft'),
+modsList: () => ipcRenderer.invoke('mods:list'),
+  modsOpenFolder: () => ipcRenderer.invoke('mods:openFolder'),
+  modsRemove: (filename) => ipcRenderer.invoke('mods:remove', { filename }),
+  modsToggle: (payload) => ipcRenderer.invoke('mods:toggle', payload),
+  modsInstallFromFile: () => ipcRenderer.invoke('mods:installFromFile'),
+  modsSearch: (q) => ipcRenderer.invoke('mods:search', { q }),
+  modsInstallModrinth: (payload) => ipcRenderer.invoke('mods:installModrinth', payload),
+  modsUpdateAll: () => ipcRenderer.invoke('mods:updateAll'),
+  modsAnalyze: () => ipcRenderer.invoke('mods:analyze'),
+  modsRollbackLast: () => ipcRenderer.invoke('mods:rollbackLast'),
+  modsDisableLastInstalled: () => ipcRenderer.invoke('mods:disableLastInstalled'),
+
+  pickDir: () => ipcRenderer.invoke('dialog:pickDir'),
+  pickOptiFineJar: () => ipcRenderer.invoke('dialog:pickOptiFineJar'),
+  pickSkin: () => ipcRenderer.invoke('dialog:pickSkin'),
+  fetchSkinByNick: (nickname) => ipcRenderer.invoke('skin:fetchByNick', nickname),
+  fetchSkinByUrl: (url, tag) => ipcRenderer.invoke('skin:fetchByUrl', { url, tag }),
+
+  fetchVersions: () => ipcRenderer.invoke('versions:fetch'),
+  forgeVersions: (mcVersion) => ipcRenderer.invoke('forge:versions', { mcVersion }),
+  fabricVersions: (mcVersion) => ipcRenderer.invoke('fabric:versions', { mcVersion }),
+  optiFineVersions: (mcVersion) => ipcRenderer.invoke('optifine:versions', { mcVersion }),
+  installForge: (mcVersion, forgeBuild) => ipcRenderer.invoke('forge:install', { mcVersion, forgeBuild }),
+  installFabric: (mcVersion) => ipcRenderer.invoke('fabric:install', { mcVersion }),
+  installOptiFine: (mcVersion, jarPath, optiFineBuild) => ipcRenderer.invoke('optifine:install', { mcVersion, jarPath, optiFineBuild }),
+  listInstalledProfiles: () => ipcRenderer.invoke('profiles:listInstalled'),
+
+  beginMicrosoft: () => ipcRenderer.invoke('ms:begin'),
+  openExternal: (url) => ipcRenderer.invoke('ms:open', url),
+  openPath: (p) => ipcRenderer.invoke('fs:openPath', p),
+  completeMicrosoft: () => ipcRenderer.invoke('ms:complete'),
+  msValidate: () => ipcRenderer.invoke('ms:validate'),
+  // Status for interactive login flow (renderer polls this)
+  msStatus: () => ipcRenderer.invoke('ms:status'),
+
+  // Aliases expected by the renderer
+  msBegin: () => ipcRenderer.invoke('ms:begin'),
+  msOpen: (url) => ipcRenderer.invoke('ms:open', url),
+  msComplete: () => ipcRenderer.invoke('ms:complete'),
+  logout: () => ipcRenderer.invoke('account:logout'),
+
+  isInstalled: (versionId) => ipcRenderer.invoke('mc:isInstalled', versionId),
+  profileExists: (versionId) => ipcRenderer.invoke('profile:exists', versionId),
+  syncJavaServers: () => ipcRenderer.invoke('servers:syncJava'),
+  lastLog: () => ipcRenderer.invoke('mc:lastLog'),
+  launch: (payload) => ipcRenderer.invoke('mc:launch', payload),
+  stop: () => ipcRenderer.invoke('mc:stop'),
+
+  bedrockCheck: () => ipcRenderer.invoke('bedrock:check'),
+  bedrockLaunch: () => ipcRenderer.invoke('bedrock:launch'),
+  bedrockOpenStore: () => ipcRenderer.invoke('bedrock:openStore'),
+  bedrockManagerStatus: () => ipcRenderer.invoke('bedrock:managerStatus'),
+  bedrockManagerSetup: () => ipcRenderer.invoke('bedrock:managerSetup'),
+  bedrockManagerOpen: () => ipcRenderer.invoke('bedrock:managerOpen'),
+  bedrockVersionsList: () => ipcRenderer.invoke('bedrock:versionsList'),
+  bedrockUninstall: () => ipcRenderer.invoke('bedrock:uninstall'),
+
+  // Bedrock content helpers (packs/worlds/skins)
+  bedrockContentPaths: () => ipcRenderer.invoke('bedrock:contentPaths'),
+  bedrockOpenContentFolder: (kind) => ipcRenderer.invoke('bedrock:openContentFolder', { kind }),
+  bedrockInstallPackFromFile: (kind) => ipcRenderer.invoke('bedrock:installPackFromFile', { kind }),
+  bedrockListWorlds: () => ipcRenderer.invoke('bedrock:worldsList'),
+  bedrockListWorldsDetailed: () => ipcRenderer.invoke('bedrock:worldsListDetailed'),
+  bedrockWorldOpen: (worldId) => ipcRenderer.invoke('bedrock:worldOpen', { worldId }),
+  bedrockExportWorld: (worldId) => ipcRenderer.invoke('bedrock:worldExport', { worldId }),
+  bedrockDeleteWorld: (worldId) => ipcRenderer.invoke('bedrock:worldDelete', { worldId }),
+  bedrockImportWorld: () => ipcRenderer.invoke('bedrock:worldImport'),
+  bedrockImportSkin: () => ipcRenderer.invoke('bedrock:skinImport'),
+
+  bedrockOptionsRead: () => ipcRenderer.invoke('bedrock:optionsRead'),
+  bedrockOptionsSet: (key, value) => ipcRenderer.invoke('bedrock:optionsSet', { key, value }),
+  bedrockOptionsApplyPreset: (preset) => ipcRenderer.invoke('bedrock:optionsApplyPreset', { preset }),
+  bedrockOptionsOpen: () => ipcRenderer.invoke('bedrock:optionsOpen'),
+
+  authStatus: () => ipcRenderer.invoke('auth:status'),
+  authBegin: (payload) => ipcRenderer.invoke('auth:begin', payload),
+  authComplete: () => ipcRenderer.invoke('auth:complete'),
+  authCancel: () => ipcRenderer.invoke('auth:cancel'),
+  authLogout: (payload) => ipcRenderer.invoke('auth:logout', payload),
+
+  resourcesList: (kind) => ipcRenderer.invoke('resources:list', { kind }),
+  resourcesOpenFolder: (kind) => ipcRenderer.invoke('resources:openFolder', { kind }),
+  resourcesInstallFromFile: (kind) => ipcRenderer.invoke('resources:installFromFile', { kind }),
+  resourcesRemove: (kind, filename) => ipcRenderer.invoke('resources:remove', { kind, filename }),
+  resourcesSearchModrinth: (payload) => ipcRenderer.invoke('resources:searchModrinth', payload),
+  resourcesInstallModrinth: (payload) => ipcRenderer.invoke('resources:installModrinth', payload),
+
+  cleanupScan: () => ipcRenderer.invoke('cleanup:scan'),
+  cleanupRun: (what) => ipcRenderer.invoke('cleanup:run', { what }),
+
+  settingsSyncApply: (payload) => ipcRenderer.invoke('settingsSync:apply', payload),
+  instanceHealth: () => ipcRenderer.invoke('instance:health'),
+
+
+  versionsList: (payload) => ipcRenderer.invoke('versions:list', payload || {}),
+
+  shellOpenExternal: (url) => ipcRenderer.invoke('shell:openExternal', { url }),
+  openCatalog: (payload) => ipcRenderer.invoke('catalog:open', payload),
+
+  modsSearchCurse: (payload) => ipcRenderer.invoke('mods:searchCurse', payload),
+  modsInstallCurse: (payload) => ipcRenderer.invoke('mods:installCurse', payload),
+
+  // Veloren
+  velorenStatus: () => ipcRenderer.invoke('veloren:status'),
+  velorenInstallLatest: () => ipcRenderer.invoke('veloren:installLatest'),
+  velorenLaunch: () => ipcRenderer.invoke('veloren:launch'),
+  velorenEnsureLatestAndLaunch: () => ipcRenderer.invoke('veloren:ensureLatestAndLaunch'),
+  velorenOpenDir: () => ipcRenderer.invoke('veloren:openDir'),
+
+  onLog: (cb) => ipcRenderer.on('log', (_e, d) => cb(d)),
+  onDownload: (cb) => ipcRenderer.on('download', (_e, d) => cb(d)),
+  onMcState: (cb) => ipcRenderer.on('mc:state', (_e, d) => cb(d)),
+  onAuthCode: (cb) => ipcRenderer.on('auth:code', (_e, d) => cb(d)),
+  onAuthError: (cb) => ipcRenderer.on('auth:error', (_e, d) => cb(d)),
+  onVelorenProgress: (cb) => ipcRenderer.on('veloren:progress', (_e, d) => cb(d)),
+  // Open built-in web catalog windows (single instance per key)
+  webOpen: (payload) => ipcRenderer.invoke('web:open', payload)
+});

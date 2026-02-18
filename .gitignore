@@ -1,0 +1,16 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+
+# local artifacts
+_asar_restore/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# keep release assets tracked
+!release/

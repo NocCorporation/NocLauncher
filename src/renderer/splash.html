@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NocLauncher Loading</title>
+  <style>
+    :root{ --bg:#070b17; --a:#7f8fff; --b:#b486ff; --c:#77f2ff; --d:#66ffbf; }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0}
+    body{
+      overflow:hidden;
+      font-family:'Segoe UI',Tahoma,sans-serif;
+      background:
+        radial-gradient(1200px 650px at 8% -8%, rgba(127,143,255,.20), transparent 62%),
+        radial-gradient(1000px 680px at 92% 4%, rgba(180,134,255,.16), transparent 64%),
+        radial-gradient(1100px 760px at 55% 118%, rgba(102,255,191,.10), transparent 72%),
+        linear-gradient(160deg,#04070f 0%, #071022 48%, #0b1530 100%);
+      color:#fff;
+      display:grid; place-items:center;
+    }
+
+    .stars, .stars2{position:fixed; inset:-200px; pointer-events:none;}
+    .stars::before, .stars2::before{content:""; position:absolute; inset:0; background-repeat:repeat;}
+    .stars::before{
+      opacity:.55;
+      background-image:
+        radial-gradient(2px 2px at 20px 30px, #fff, transparent 60%),
+        radial-gradient(1.5px 1.5px at 120px 80px, #cce2ff, transparent 60%),
+        radial-gradient(1.4px 1.4px at 220px 140px, #ffffff, transparent 62%),
+        radial-gradient(1.8px 1.8px at 320px 200px, #b2c7ff, transparent 64%);
+      background-size: 380px 260px;
+      animation:starsDrift 28s linear infinite;
+    }
+    .stars2::before{
+      opacity:.28;
+      filter: blur(.4px);
+      background-image:
+        radial-gradient(1.2px 1.2px at 40px 40px, #fff, transparent 60%),
+        radial-gradient(1.1px 1.1px at 180px 120px, #c4f7ff, transparent 60%),
+        radial-gradient(1.3px 1.3px at 280px 180px, #fff, transparent 60%);
+      background-size: 320px 220px;
+      animation:starsDrift 52s linear infinite reverse;
+    }
+    @keyframes starsDrift{from{transform:translateY(0)}to{transform:translateY(220px)}}
+
+    .grid{position:fixed; inset:0; opacity:.12; background-image:linear-gradient(rgba(255,255,255,.25) 1px, transparent 1px),linear-gradient(90deg, rgba(255,255,255,.25) 1px, transparent 1px); background-size:34px 34px; animation:gridShift 12s linear infinite;}
+    @keyframes gridShift{from{transform:translateY(0)}to{transform:translateY(34px)}}
+
+    .orb{position:fixed;border-radius:50%;filter:blur(24px);opacity:.58;pointer-events:none;animation:drift 8s ease-in-out infinite alternate}
+    .o1{width:240px;height:240px;background:var(--a);left:8%;top:10%}
+    .o2{width:300px;height:300px;background:var(--b);right:8%;top:16%;animation-delay:.6s}
+    .o3{width:270px;height:270px;background:var(--c);left:40%;bottom:6%;animation-delay:1.2s}
+    @keyframes drift{from{transform:translateY(-12px) translateX(-4px)}to{transform:translateY(14px) translateX(4px)}}
+
+    .planet{position:fixed; border-radius:50%; pointer-events:none; box-shadow: inset -18px -22px 45px rgba(0,0,0,.28), 0 0 48px rgba(180,214,255,.24);}
+    .p1{width:160px;height:160px;left:5%;bottom:8%;background:radial-gradient(circle at 30% 28%, #eff6ff 0%, #9db8ff 34%, #5a6dcf 68%, #344589 100%); animation:planetFloat1 10s ease-in-out infinite;}
+    .p2{width:120px;height:120px;right:7%;bottom:14%;background:radial-gradient(circle at 32% 30%, #f5ebff 0%, #c5a9ff 36%, #7e63c9 70%, #4b3a7f 100%); animation:planetFloat2 12s ease-in-out infinite;}
+    .ring{position:absolute; left:-20%; top:38%; width:140%; height:34%; border:2px solid rgba(225,235,255,.6); border-radius:50%; transform:rotate(-14deg); opacity:.62}
+    @keyframes planetFloat1{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+    @keyframes planetFloat2{0%,100%{transform:translateY(0)}50%{transform:translateY(11px)}}
+
+    .fighter{position:fixed; width:18px; height:7px; border-radius:999px 50% 50% 999px; background:linear-gradient(90deg,#f6fbff,#8fdcff); box-shadow:0 0 14px rgba(143,220,255,.9); pointer-events:none;}
+    .fighter::after{content:""; position:absolute; right:100%; top:50%; width:90px; height:2px; transform:translateY(-50%); background:linear-gradient(90deg, rgba(120,220,255,0), rgba(120,220,255,.65));}
+    .f1{top:20%; left:-80px; animation:fighterFly 8s linear infinite;}
+    .f2{top:36%; left:-160px; animation:fighterFly 9.4s linear infinite 1.8s; transform:scale(.9);}
+    .f3{top:66%; left:-120px; animation:fighterFly 11s linear infinite 4s; transform:scale(1.1);}
+    @keyframes fighterFly{from{transform:translateX(0) translateY(0)}50%{transform:translateX(56vw) translateY(-20px)}to{transform:translateX(118vw) translateY(4px)}}
+
+    .vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(110% 85% at 50% 35%, transparent 45%, rgba(0,0,0,.34) 78%, rgba(0,0,0,.56) 100%);}
+
+    .card{width:min(640px,92vw); border:1px solid rgba(185,210,255,.28); border-radius:20px; background:linear-gradient(180deg, rgba(18,28,54,.78), rgba(10,16,34,.82)); backdrop-filter:blur(14px); box-shadow:0 32px 95px rgba(0,0,0,.62), inset 0 0 0 1px rgba(255,255,255,.04); padding:28px 26px 22px; position:relative; overflow:hidden}
+    .shine{position:absolute; inset:-80% -40%; background:linear-gradient(110deg, transparent 45%, rgba(255,255,255,.18) 50%, transparent 55%); animation:shine 3.2s ease-in-out infinite}
+    @keyframes shine{from{transform:translateX(-50%)}to{transform:translateX(50%)}}
+
+    .title{font-size:40px;line-height:1;font-weight:900;letter-spacing:.4px;text-shadow:0 8px 26px rgba(0,0,0,.55);margin:0 0 8px;animation:pop .7s cubic-bezier(.2,.8,.2,1)}
+    @keyframes pop{from{opacity:0; transform:translateY(10px) scale(.98)}to{opacity:1; transform:translateY(0) scale(1)}}
+    .sub{opacity:.84;font-size:14px;margin-bottom:12px;min-height:20px}
+
+    .tips{height:26px;display:flex;align-items:center;font-size:13px;color:#d9fbe8;opacity:.9;margin-bottom:14px}
+    .tip{position:absolute;opacity:0;transform:translateY(8px);animation:tipCycle 7.5s infinite}
+    .tip:nth-child(2){animation-delay:2.5s}
+    .tip:nth-child(3){animation-delay:5s}
+    @keyframes tipCycle{0%{opacity:0;transform:translateY(8px)}8%,28%{opacity:1;transform:translateY(0)}34%,100%{opacity:0;transform:translateY(-8px)}}
+
+    .barWrap{height:13px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16)}
+    .bar{height:100%;width:28%; background:linear-gradient(90deg,#8ea8ff,#8df5ff,#91ffd0); border-radius:999px; animation:load 1.6s ease-in-out infinite; box-shadow:0 0 20px rgba(141,245,255,.7)}
+    @keyframes load{0%{transform:translateX(-46%)}50%{transform:translateX(140%)}100%{transform:translateX(320%)}}
+
+    .meta{margin-top:12px;font-size:12px;opacity:.74;display:flex;justify-content:space-between}
+    .dots span{display:inline-block;width:6px;height:6px;border-radius:50%;background:#9effcf;margin-left:4px;animation:blink 1.2s infinite}
+    .dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}
+    @keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+  </style>
+</head>
+<body>
+  <div class="grid"></div>
+  <div class="stars"></div><div class="stars2"></div>
+  <div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div>
+  <div class="planet p1"></div>
+  <div class="planet p2"><div class="ring"></div></div>
+  <div class="fighter f1"></div><div class="fighter f2"></div><div class="fighter f3"></div>
+  <div class="vignette"></div>
+
+  <div class="card">
+    <div class="shine"></div>
+    <h1 class="title">NocLauncher</h1>
+    <div class="sub">Запуск лаунчера... подготавливаем всё к игре</div>
+
+    <div class="tips" style="position:relative;">
+      <div class="tip">⚡ Оптимизируем загрузчик версий...</div>
+      <div class="tip">🧩 Подключаем Java / Bedrock модули...</div>
+      <div class="tip">🎮 Почти готово, ещё чуть-чуть...</div>
+    </div>
+
+    <div class="barWrap"><div class="bar"></div></div>
+    <div class="meta">
+      <div>JAVA • BEDROCK • VERSION MANAGER</div>
+      <div>Loading<div class="dots" style="display:inline-block"><span></span><span></span><span></span></div></div>
+    </div>
+  </div>
+</body>
+</html>

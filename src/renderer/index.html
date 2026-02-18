@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NocLauncher</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="mode-java">
+  <div id="spaceBg"></div>
+  <div class="bg"></div>
+  <canvas id="fx"></canvas>
+
+  <div class="app">
+    <main class="screen">
+      <div class="loginCard" role="application" aria-label="NocLauncher">
+        <div class="topBar">
+          <div class="brand" aria-label="NocLauncher">
+            <div class="logoMoon">NocLauncher</div>
+          </div>
+          <nav class="topNav" aria-label="Навигация">
+            <button class="navBtn iconOnly active" id="navPlay" type="button" aria-label="Играть" title="Играть">▶</button>
+            <button class="navBtn iconOnly hidden" id="btnMods" type="button" aria-label="Моды" title="Моды">🧩</button>
+            <button class="navBtn iconOnly hidden" id="btnResources" type="button" aria-label="Ресурсы" title="Ресурсы">🗂</button>
+            <button class="navBtn iconOnly hidden" id="btnProfiles" type="button" aria-label="Инстансы" title="Инстансы">🗃</button>
+            <button class="navBtn iconOnly" id="btnOpenSettings" type="button" aria-label="Настройки" title="Настройки">⚙</button>
+            <button class="navBtn hidden" id="navAuth" type="button">Аккаунт</button>
+          </nav>
+        </div>
+
+        <div class="cardGrid single">
+          <section class="mainPane" aria-label="Панель управления">
+            <div class="modeRow" role="tablist" aria-label="Режим запуска">
+              <button class="modeBtn active" id="modeJava" type="button" aria-selected="true">JAVA</button>
+              <button class="modeBtn" id="modeBedrock" type="button" aria-selected="false">BEDROCK</button>
+            </div>
+
+            <div class="subRow" id="javaControls">
+              <button class="chip" id="btnPickVersion" type="button" title="Выбрать версию">
+                <span class="chipKey">Версия</span>
+                <span class="chipVal" id="pickedVersion">—</span>
+              </button>
+
+              <!-- Для совместимости с текущей логикой (используется как внутреннее значение) -->
+              <select class="selectMini hidden" id="versionSelect" aria-hidden="true" tabindex="-1"></select>
+
+              <select class="selectMini" id="loaderMode" title="Лоадер">
+                <option value="forge">Forge</option>
+                <option value="vanilla">Vanilla</option>
+                <option value="optifine">OptiFine</option>
+              </select>
+
+                          </div>
+
+            <div class="field">
+              <div class="fieldIco" aria-hidden="true">👤</div>
+              <input class="fieldInput" id="username" placeholder="Ник" autocomplete="off" />
+            </div>
+
+            <div class="row">
+              <!-- remember moved out of the main UI (kept for compatibility) -->
+              <input type="checkbox" id="remember" class="hidden" checked />
+
+              <div class="hrow" style="gap:10px; justify-content:flex-end;">
+                <button class="chip chipSmall hidden" id="btnStop" type="button" title="Остановить запуск/игру">Стоп</button>
+                <button class="btnPlay" id="btnPlay" type="button">
+                <span class="playIco" aria-hidden="true">⟲</span>
+                <span id="actionLabel">Установить</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="row row2" id="javaOnlineRow">
+              <label class="toggle hidden">
+                <input type="checkbox" id="onlineMode" />
+                <span class="track" aria-hidden="true"></span>
+                <span class="toggleTxt">Лицензия (Microsoft)</span>
+              </label>
+              <div class="hrow javaToolsRow">
+                <div class="chip chipSmall modeBadge">Режим: Пиратка (стабильный)</div>
+                <button class="chip chipSmall" id="btnGameDiag" type="button" title="Логи и диагностика игры">Логи</button>
+                <button class="chip chipSmall hidden" id="btnAuthDiag" type="button" title="Диагностика входа">Вход</button>
+              </div>
+            </div>
+
+            <div class="bedrockBox hidden" id="bedrockBox">
+              <div class="bedrockTitle">Minecraft for Windows</div>
+              <div class="bedrockState" id="bedrockState">Проверяю установку…</div>
+              <div class="hrow">
+                <button class="btnPrimary" id="btnBedrockAction" type="button">Проверка…</button>
+                <button class="chip chipSmall" id="btnBedrockVersions" type="button">Версии</button>
+                <button class="chip chipSmall" id="btnBedrockUninstall" type="button">Удалить</button>
+              </div>
+            </div>
+
+            <div class="dlBox hidden" id="dlBox" aria-live="polite">
+              <div class="dlTop">
+                <div class="dlLabel" id="dlText">—</div>
+                <div class="dlPct" id="dlPct">0%</div>
+              </div>
+              <div class="dlBarWrap"><div class="dlBar" id="dlBar"></div></div>
+              <div class="dlFoot">
+                <div class="dlPath" id="dlPath">Папка: —</div>
+                <button class="ghostBtn" id="btnOpenDir" type="button">Открыть папку</button>
+              </div>
+            </div>
+
+            <div class="row" style="justify-content:flex-start; margin-top:12px;">
+              <button class="chip" id="btnOpenLibrary" type="button">Моды • Текстуры • Шейдеры</button>
+            </div>
+
+            <div class="statusLine" id="status">Готов</div>
+            <div class="footMeta" id="footMeta">—</div>
+
+            <div class="healthPanel hidden" id="healthPanel">
+              <div class="healthItem" id="healthNick">• Ник: —</div>
+              <div class="healthItem" id="healthMemory">• Память: —</div>
+              <div class="healthItem" id="healthServers">• Серверы: —</div>
+              <div class="healthItem" id="healthLoader">• Лоадер: —</div>
+            </div>
+            <div class="timeline hidden" id="timeline"></div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Bedrock graphics/settings modal -->
+      <div class="modal hidden" id="modalBedrockSettings" role="dialog" aria-label="Bedrock настройки" aria-modal="true">
+        <div class="modalCard" style="max-width: 980px;">
+          <div class="modalHead">
+            <div class="modalTitle">Bedrock: графика и настройки</div>
+            <button class="iconBtn" id="btnCloseBedrockSettings" type="button" aria-label="Закрыть">✕</button>
+          </div>
+          <div class="form">
+            <div class="formRow">
+              <div class="lbl">Пресеты</div>
+              <div class="hrow" style="gap:8px; justify-content:flex-end; flex-wrap:wrap;">
+                <button class="btn mini" id="btnBrPresetLow" type="button">Низко</button>
+                <button class="btn mini" id="btnBrPresetMed" type="button">Средне</button>
+                <button class="btn mini" id="btnBrPresetHigh" type="button">Высоко</button>
+                <button class="btn mini" id="btnBrPresetUltra" type="button">Ультра</button>
+                <button class="btn mini ghost" id="btnBrOptionsOpen" type="button">Открыть options.txt</button>
+                <button class="btn mini ghost" id="btnBrOptionsRefresh" type="button">Обновить</button>
+              </div>
+            </div>
+
+            <div class="help" id="bedrockOptionsHint">Я меняю файл настроек Bedrock (options.txt). Игра должна быть закрыта, чтобы всё применилось стабильно.</div>
+
+            <div class="formRow" style="margin-top:10px;">
+              <div class="lbl">Все параметры</div>
+              <input class="input" id="brOptSearch" placeholder="Поиск по ключу (например gfx_, render, ui_)" />
+            </div>
+            <div class="list" id="brOptionsList"></div>
+            <div class="help">Совет: меняй значения аккуратно. Если не уверен — используй пресеты.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Versions modal -->
+      <div class="modal hidden" id="modalVersions" role="dialog" aria-label="Версии" aria-modal="true">
+        <div class="modalCard modalCard--versions">
+          <div class="modalHead">
+            <div class="modalTitle">Выбор версии</div>
+            <button class="iconBtn" id="btnCloseVersions" type="button" aria-label="Закрыть">✕</button>
+          </div>
+          <div class="modalTools">
+            <div class="hrow" style="gap:8px;">
+              <button class="chip chipSmall active" id="btnVersionsOnline" type="button" title="Онлайн список">Онлайн</button>
+              <button class="chip chipSmall" id="btnVersionsInstalled" type="button" title="Установленные">Установленные</button>
+            </div>
+            <select class="selectMini" id="typeFilter">
+              <option value="all">Все</option>
+              <option value="release">Release</option>
+              <option value="snapshot">Snapshot</option>
+              <option value="old_beta">Old Beta</option>
+              <option value="old_alpha">Old Alpha</option>
+            </select>
+            <input class="inputMini" id="versionSearch" placeholder="Поиск версии…" autocomplete="off" />
+            <button class="chip chipSmall" id="btnRefreshVersions" type="button" title="Обновить">⟲</button>
+          </div>
+          <div class="list" id="versionsList"></div>
+          <div class="modalFoot">
+            <button class="chip" id="btnMoreVersions" type="button">Показать ещё</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings modal -->
+      <div class="modal hidden" id="modalSettings" role="dialog" aria-label="Настройки" aria-modal="true">
+        <div class="modalCard">
+          <div class="modalHead">
+            <div class="modalTitle">Настройки</div>
+            <button class="iconBtn" id="btnCloseSettings" type="button" aria-label="Закрыть">✕</button>
+          </div>
+          <div class="form">
+            <div class="formRow">
+              <div class="lbl">Папка игры</div>
+              <div class="hrow">
+                <input class="inputMini mono" id="gameDir" placeholder="C:\\..." />
+                <button class="chip chipSmall" id="btnPickDir" type="button">Выбрать</button>
+              </div>
+            </div>
+            <div class="formRow">
+              <div class="lbl">Java (необязательно)</div>
+              <input class="inputMini mono" id="javaPath" placeholder="C:\\...\\javaw.exe" />
+            </div>
+            <div class="formRow">
+              <div class="lbl">Скин</div>
+              <select class="inputMini" id="skinMode">
+                <option value="auto">Авто</option>
+                <option value="file">Файл PNG</option>
+                <option value="nick">Ник скина</option>
+                <option value="url">Ссылка PNG</option>
+                <option value="off">Выкл</option>
+              </select>
+            </div>
+            <div class="formRow" id="skinRowFile">
+              <div class="hrow">
+                <input class="inputMini mono" id="offlineSkinPath" placeholder="C:\\...\\skin.png" />
+                <button class="chip chipSmall" id="btnPickSkin" type="button">Файл</button>
+              </div>
+            </div>
+            <div class="formRow" id="skinRowNick">
+              <div class="hrow">
+                <input class="inputMini" id="skinNick" placeholder="Ник скина" />
+                <button class="chip chipSmall" id="btnFetchSkinNick" type="button">Найти</button>
+              </div>
+            </div>
+            <div class="formRow" id="skinRowUrl">
+              <input class="inputMini mono" id="skinUrl" placeholder="https://.../skin.png" />
+            </div>
+            <div class="formRow">
+              <div class="lbl">Память (MB)</div>
+              <div class="grid2">
+                <input class="inputMini" id="memMin" type="number" min="512" step="256" placeholder="Min" />
+                <input class="inputMini" id="memMax" type="number" min="1024" step="256" placeholder="Max" />
+              </div>
+            </div>
+            <div class="formRow">
+              <div class="lbl">Скачивание</div>
+              <div class="grid2">
+                <select class="inputMini" id="downloadMode">
+                  <option value="normal">Обычная</option>
+                  <option value="fast">Быстрая</option>
+                  <option value="turbo">Турбо</option>
+                </select>
+                <select class="inputMini" id="downloadSource">
+                  <option value="auto">Авто (лучший)</option>
+                  <option value="mojang">Mojang</option>
+                  <option value="bmclapi">BMCLAPI</option>
+                </select>
+              </div>
+            </div>
+            <div class="formRow">
+              <label class="check">
+                <input type="checkbox" id="mirrorFallback" />
+                <span>Фолбэк на зеркало при проблемах</span>
+              </label>
+            </div>
+            <div class="formRow split">
+              <div class="col">
+                <div class="lbl">Параллельность</div>
+                <input class="inputMini" id="downloadParallel" type="number" min="0" max="16" placeholder="0 = авто" />
+              </div>
+              <div class="col">
+                <div class="lbl">Лимит (KB/s)</div>
+                <input class="inputMini" id="downloadMaxKBps" type="number" min="0" placeholder="0 = без лимита" />
+              </div>
+            </div>
+            <div class="formRow">
+              <div class="lbl">JVM пресет</div>
+              <select class="inputMini" id="jvmPreset">
+                <option value="auto">Авто</option>
+                <option value="stable">Стабильно</option>
+                <option value="fps">Максимум FPS</option>
+                <option value="lowend">Слабый ПК</option>
+              </select>
+            </div>
+            <div class="formRow">
+              <label class="check">
+                <input type="checkbox" id="safeLaunchNoMods" />
+                <span>Безопасный запуск (временно без модов)</span>
+              </label>
+            </div>
+            <div class="formRow">
+              <label class="check">
+                <input type="checkbox" id="uiLowPower" />
+                <span>Отключить анимированный фон (экономия ресурсов)</span>
+              </label>
+            </div>
+            <div class="formRow">
+              <label class="check">
+                <input type="checkbox" id="closeLauncherOnGameStart" />
+                <span>Закрывать лаунчер после запуска игры</span>
+              </label>
+            </div>
+            <div class="formRow actionsRow">
+              <button class="btn mini" id="btnAutoSetup" type="button">Сделать всё</button>
+              <button class="btn mini ghost" id="btnFix" type="button">Исправить</button>
+              <button class="btn mini ghost" id="btnRepair" type="button">Repair</button>
+            </div>
+            <div class="formRow actionsRow">
+              <button class="btn mini ghost" id="btnSnapshot" type="button">Снимок</button>
+              <select class="inputMini" id="snapshotSelect"></select>
+              <button class="btn mini ghost" id="btnRestoreSnapshot" type="button">Откат</button>
+            </div>
+            <div class="formRow actionsRow">
+              <button class="btn mini ghost" id="btnExportInstance" type="button">Экспорт</button>
+              <button class="btn mini ghost" id="btnImportDot" type="button">Импорт</button>
+            </div>
+            <div class="formRow actionsRow">
+              <button class="btn mini ghost" id="btnCleanup" type="button">Очистка</button>
+              <button class="btn mini ghost" id="btnSyncSettings" type="button">Синхр.</button>
+            </div>
+            <div class="formRow">
+              <button class="btnPrimary" id="btnSaveSettings" type="button">Сохранить</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Crash / game diagnostics modal -->
+      <div class="modal hidden" id="modalCrash" role="dialog" aria-label="Диагностика игры" aria-modal="true">
+        <div class="modalCard" style="max-width: 980px;">
+          <div class="modalHead">
+            <div class="modalTitle">Minecraft закрылся с ошибкой</div>
+            <button class="iconBtn" id="btnCloseCrash" type="button" aria-label="Закрыть">✕</button>
+          </div>
+
+          <div class="form">
+            <div class="formRow">
+              <div class="lbl">Подсказка</div>
+              <div class="help" id="crashHint">—</div>
+            </div>
+
+            <div class="formRow">
+              <div class="lbl">Файл лога лаунчера</div>
+              <div class="hrow">
+                <input class="inputMini mono" id="crashLogPath" readonly placeholder="—" />
+                <button class="chip chipSmall" id="btnOpenCrashLog" type="button">Открыть</button>
+                <button class="chip chipSmall" id="btnOpenCrashFolder" type="button">Папка</button>
+                <button class="chip chipSmall" id="btnCopyCrash" type="button">Копировать</button>
+              </div>
+            </div>
+
+            <div class="formRow">
+              <div class="lbl">Хвост логов</div>
+              <textarea class="ta" id="crashTail" rows="14" spellcheck="false" placeholder="Здесь появятся логи…"></textarea>
+              <div class="help">Если вылет повторяется — просто нажми “Копировать” и отправь сюда.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profiles modal -->
+      <div class="modal hidden" id="modalProfiles" role="dialog" aria-label="Инстансы" aria-modal="true">
+        <div class="modalCard">
+          <div class="modalHead">
+            <div class="modalTitle">Инстансы</div>
+            <button class="iconBtn" id="btnCloseProfiles" type="button" aria-label="Закрыть">✕</button>
+          </div>
+          <div class="list" id="profilesList"></div>
+        </div>
+      </div>
+
+      <!-- Bedrock versions modal -->
+      <div class="modal hidden" id="modalBedrockVersions" role="dialog" aria-label="Bedrock версии" aria-modal="true">
+        <div class="modalCard">
+          <div class="modalHead">
+            <div class="modalTitle">Bedrock версии</div>
+            <button class="iconBtn" id="btnCloseBedrockVersions" type="button" aria-label="Закрыть">✕</button>
+          </div>
+          <div class="form">
+            <div class="lbl" id="bedrockMgrState">Статус: проверка...</div>
+            <div class="list" id="bedrockVersionsList"></div>
+            <div class="hrow" style="margin-top:10px;">
+              <button class="chip" id="btnBedrockInstallSelected" type="button">Установить выбранную</button>
+              <button class="chip" id="btnBedrockRollback" type="button">Откат</button>
+              <button class="chip" id="btnOpenOfficialBedrockMgr" type="button">Открыть менеджер</button>
+            </div>
+            <div class="lbl" id="bedrockMgrHint" style="margin-top:8px;">Подсказка появится после проверки.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bedrock content modal -->
+      <div class="modal hidden" id="modalBedrockContent" role="dialog" aria-label="Bedrock контент" aria-modal="true">
+        <div class="modalCard" style="max-width: 980px;">
+          <div class="modalHead">
+            <div class="modalTitle">Bedrock: контент</div>
+            <button class="iconBtn" id="btnCloseBedrockContent" type="button" aria-label="Закрыть">✕</button>
+          </div>
+          <div class="form">
+            <div class="seg" id="bedrockContentTabs" style="margin-bottom:10px;">
+              <button class="segBtn active" data-tab="packs" type="button">Ресурсы</button>
+              <button class="segBtn" data-tab="worlds" type="button">Миры</button>
+              <button class="segBtn" data-tab="skins" type="button">Скины</button>
+            </div>
+
+            <div id="bedrockTabPacks">
+              <div class="formRow">
+                <div class="lbl">Папки Bedrock</div>
+                <div class="help" id="bedrockPathsHint">—</div>
+              </div>
+              <div class="formRow">
+                <div class="grid2">
+                  <select class="inputMini" id="bedrockPackKind">
+                    <option value="resourcePacks">Текстуры (resource_packs)</option>
+                    <option value="behaviorPacks">Ресурсы/Аддоны (behavior_packs)</option>
+                  </select>
+                  <div class="hrow" style="justify-content:flex-end;">
+                    <button class="btn mini" id="btnBedrockPackInstall" type="button">Установить</button>
+                    <button class="btn mini ghost" id="btnBedrockPackOpen" type="button">Открыть папку</button>
+                  </div>
+                </div>
+              </div>
+              <div class="help">Поддержка .mcpack / .mcaddon / .zip. После установки открой игру — пак появится в списке.</div>
+            </div>
+
+            <div id="bedrockTabWorlds" class="hidden">
+              <div class="formRow actionsRow">
+                <button class="btn mini" id="btnBedrockWorldImport" type="button">Импорт ZIP</button>
+                <button class="btn mini ghost" id="btnBedrockWorldOpen" type="button">Открыть папку</button>
+                <button class="btn mini ghost" id="btnBedrockWorldRefresh" type="button">Обновить</button>
+              </div>
+              <div class="list" id="bedrockWorldsList"></div>
+              <div class="help">Экспорт = “скачать мир”. Удаление — прямо из лаунчера.</div>
+            </div>
+
+            <div id="bedrockTabSkins" class="hidden">
+              <div class="formRow actionsRow">
+                <button class="btn mini" id="btnBedrockSkinImport" type="button">Импорт PNG</button>
+                <button class="btn mini ghost" id="btnBedrockSkinOpen" type="button">Открыть папку</button>
+              </div>
+              <div class="help">Я сохраню PNG в папку Bedrock. В игре открой: Профиль → Редактировать персонажа → Импорт.</div>
+              <div class="lbl" id="bedrockSkinLast" style="margin-top:10px;">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resources modal -->
+      <div class="modal hidden" id="modalResources" role="dialog" aria-label="Ресурсы" aria-modal="true">
+        <div class="modalCard">
+          <div class="modalHead">
+            <div class="modalTitle">Ресурсы и шейдеры</div>
+            <button class="iconBtn" id="btnCloseResources" type="button" aria-label="Закрыть">✕</button>
+          </div>
+          <div class="form">
+            <div class="formRow">
+              <div class="lbl">Тип</div>
+              <select class="inputMini" id="resKind">
+                <option value="resourcepacks">Resourcepacks</option>
+                <option value="shaderpacks">Shaderpacks</option>
+              </select>
+            </div>
+            <div class="formRow actionsRow">
+              <button class="btn mini" id="btnResInstall" type="button">Установить ZIP</button>
+              <button class="btn mini ghost" id="btnResOpenFolder" type="button">Открыть папку</button>
+              <button class="btn mini ghost" id="btnResRefresh" type="button">Обновить</button>
+            </div>
+            <div class="list" id="resList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cleanup modal -->
+      <div class="modal hidden" id="modalCleanup" role="dialog" aria-label="Очистка" aria-modal="true">
+        <div class="modalCard">
+          <div class="modalHead">
+            <div class="modalTitle">Очистка</div>
+            <button class="iconBtn" id="btnCloseCleanup" type="button" aria-label="Закрыть">✕</button>
+          </div>
+          <div class="form">
+            <div class="formRow"><div class="lbl" id="cleanupHint">—</div></div>
+            <div class="formRow">
+              <label class="check"><input type="checkbox" id="clLogs" checked /><span>Логи</span></label>
+              <label class="check"><input type="checkbox" id="clCrashes" checked /><span>Crash-reports</span></label>
+              <label class="check"><input type="checkbox" id="clNatives" checked /><span>Временные natives</span></label>
+              <label class="check"><input type="checkbox" id="clPart" checked /><span>.part/.tmp</span></label>
+              <label class="check"><input type="checkbox" id="clExports" /><span>Экспорты</span></label>
+            </div>
+            <div class="formRow actionsRow">
+              <button class="btn mini" id="btnCleanupRun" type="button">Очистить</button>
+              <button class="btn mini ghost" id="btnCleanupScan" type="button">Скан</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sync modal -->
+      <div class="modal hidden" id="modalSync" role="dialog" aria-label="Синхронизация" aria-modal="true">
+        <div class="modalCard">
+          <div class="modalHead">
+            <div class="modalTitle">Синхронизация настроек</div>
+            <button class="iconBtn" id="btnCloseSync" type="button" aria-label="Закрыть">✕</button>
+          </div>
+          <div class="form">
+            <div class="formRow"><div class="lbl">Скопировать options/servers (и optionsof для OptiFine) между инстансами.</div></div>
+            <div class="formRow"><div class="grid2"><select class="inputMini" id="syncFrom"></select><select class="inputMini" id="syncTo"></select></div></div>
+            <div class="formRow actionsRow"><button class="btn mini" id="btnSyncApply" type="button">Применить</button></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Auth modal -->
+      <div class="modal hidden" id="modalAuth" role="dialog" aria-label="Авторизация" aria-modal="true">
+        <div class="modalCard">
+          <div class="modalHead">
+            <div class="modalTitle">Авторизация (Microsoft)</div>
+            <button class="iconBtn" id="btnCloseAuth" type="button" aria-label="Закрыть">✕</button>
+          </div>
+          <div class="form">
+            <div class="formRow"><div class="lbl" id="authHint">—</div></div>
+            <div class="formRow"><div class="hrow"><button class="chip" id="btnOpenAuthUrl" type="button">Открыть вход</button><button class="chip" id="btnRetryAuth" type="button">Повторить</button></div></div>
+            <div class="formRow"><div class="lbl">Логи</div><textarea class="inputMini mono" id="authLog" rows="10" readonly style="resize:none;"></textarea></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mods modal -->
+      <div class="modal hidden" id="modsModal" role="dialog" aria-modal="true" aria-label="Библиотека">
+        <div class="modalCard">
+          <div class="modalHead">
+            <div class="modalTitle" id="modsTitle">Библиотека</div>
+            <button class="iconBtn" id="modsClose" type="button" aria-label="Закрыть">✕</button>
+          </div>
+          <div class="modalBody">
+            <div class="modsTop">
+              <div class="seg" id="libraryTabs">
+                <button class="segBtn active" data-libtab="mods" type="button">Моды</button>
+                <button class="segBtn" data-libtab="resourcepacks" type="button">Текстуры</button>
+                <button class="segBtn" data-libtab="shaderpacks" type="button">Шейдеры</button>
+              </div>
+              <input class="input" id="modsSearch" placeholder="Поиск…" />
+              <button class="btn btnSmall" id="modsSearchBtn" type="button">Искать</button>
+              <button class="btn btnSmall" id="modsUpdateAllBtn" type="button" title="Только для модов">Обновить всё</button>
+            </div>
+            <div class="modsGrid">
+              <section class="modsPane">
+                <div class="paneTitle">Установленные</div>
+                <div class="paneActions">
+                  <button class="btn btnSmall" id="modsRefreshBtn" type="button">Обновить</button>
+                  <button class="btn btnSmall" id="modsOpenFolderBtn" type="button">Папка</button>
+                  <button class="btn btnSmall" id="modsInstallFileBtn" type="button">Установить .jar</button>
+                  <button class="btn btnSmall" id="modsAnalyzeBtn" type="button">Проверить</button>
+                  <button class="btn btnSmall" id="modsRollbackBtn" type="button">Откат</button>
+                  <button class="btn btnSmall" id="modsDisableLastBtn" type="button">Выключить последний</button>
+                </div>
+                <div class="list" id="modsInstalledList"></div>
+              </section>
+              <section class="modsPane">
+                <div class="paneTitle">Результаты поиска</div>
+                <div class="list" id="modsSearchList"></div>
+              </section>
+            </div>
+            <div class="hint" id="modsHint"></div>
+            <div class="list" id="modsIssues"></div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
