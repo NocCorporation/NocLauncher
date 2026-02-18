@@ -59,7 +59,46 @@ jobs:
         env:
           TARGET: ${{ matrix.target }}
         run: |
-          node -e "const fs=require('fs');const path=require('path');const crypto=require('crypto');const pkg=require('./package.json');const v=pkg.version;const t=(process.env.TARGET||'').toLowerCase();const dist='dist';const out=path.join(dist,'release-assets');fs.mkdirSync(out,{recursive:true});const isWin=t==='win'||t==='win32';const exts=isWin?['.exe','.msi','.blockmap']:t==='linux'?['.AppImage','.deb','.rpm']:['.dmg','.zip'];const osTag=isWin?'windows':t==='linux'?'linux':'macos';const archTag=t==='win32'?'x86':'x64';const files=fs.existsSync(dist)?fs.readdirSync(dist):[];const picked=files.filter(f=>exts.some(e=>f.endsWith(e)));for(const f of picked){const src=path.join(dist,f);const ext=path.extname(f);const dstName=`NocLauncher-${v}-${osTag}-${archTag}${ext}`;const dst=path.join(out,dstName);fs.copyFileSync(src,dst);}const outFiles=fs.readdirSync(out).map(f=>path.join(out,f));const lines=[];for(const f of outFiles){const buf=fs.readFileSync(f);const hash=crypto.createHash('sha256').update(buf).digest('hex');lines.push(`${hash}  ${path.basename(f)}`);}fs.writeFileSync(path.join(out,'SHA256SUMS.txt'),lines.join('\n')+'\n');"
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const crypto = require('crypto');
+          const pkg = require('./package.json');
+
+          const v = pkg.version;
+          const t = String(process.env.TARGET || '').toLowerCase();
+          const dist = 'dist';
+          const out = path.join(dist, 'release-assets');
+          fs.mkdirSync(out, { recursive: true });
+
+          const isWin = t === 'win' || t === 'win32';
+          const exts = isWin
+            ? ['.exe', '.msi', '.blockmap']
+            : (t === 'linux' ? ['.AppImage', '.deb', '.rpm'] : ['.dmg', '.zip']);
+
+          const osTag = isWin ? 'windows' : (t === 'linux' ? 'linux' : 'macos');
+          const archTag = t === 'win32' ? 'x86' : 'x64';
+
+          const files = fs.existsSync(dist) ? fs.readdirSync(dist) : [];
+          const picked = files.filter((f) => exts.some((e) => f.endsWith(e)));
+
+          for (const f of picked) {
+            const src = path.join(dist, f);
+            const ext = path.extname(f);
+            const dstName = 'NocLauncher-' + v + '-' + osTag + '-' + archTag + ext;
+            const dst = path.join(out, dstName);
+            fs.copyFileSync(src, dst);
+          }
+
+          const outFiles = fs.readdirSync(out).map((f) => path.join(out, f));
+          const lines = [];
+          for (const f of outFiles) {
+            const buf = fs.readFileSync(f);
+            const hash = crypto.createHash('sha256').update(buf).digest('hex');
+            lines.push(hash + '  ' + path.basename(f));
+          }
+          fs.writeFileSync(path.join(out, 'SHA256SUMS-' + t + '.txt'), lines.join('\n') + '\n');
+          NODE
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
