@@ -1867,14 +1867,38 @@ async function applySync() {
 }
 
 async function openModrinthCatalogFromUI() {
+  const mcVersion = getSelectedBaseVersion();
+  const loader = String($('#loaderMode')?.value || state.settings?.loaderMode || 'vanilla');
+  const url = `https://modrinth.com/mods?${new URLSearchParams({ ...(mcVersion ? { g: mcVersion } : {}), ...((loader === 'fabric' || loader === 'forge' || loader === 'quilt' || loader === 'neoforge') ? { l: loader } : {}) }).toString()}`;
+
+  // 1) preferred: main-process catalog window
   try {
-    const mcVersion = getSelectedBaseVersion();
-    const loader = String($('#loaderMode')?.value || state.settings?.loaderMode || 'vanilla');
-    const r = await window.noc.openCatalog({ provider: 'modrinth', mcVersion, loader });
-    if (!r?.ok) throw new Error(r?.error || 'Не удалось открыть Modrinth');
-  } catch (e) {
-    setStatus('Modrinth: ' + (e?.message || e));
-  }
+    if (window.noc?.openCatalog) {
+      const r = await window.noc.openCatalog({ provider: 'modrinth', mcVersion, loader });
+      if (r?.ok) return;
+    }
+  } catch (_) {}
+
+  // 2) fallback: generic in-app web window
+  try {
+    if (window.noc?.webOpen) {
+      const r2 = await window.noc.webOpen({ key: 'modrinth', url, title: 'Modrinth' });
+      if (r2?.ok) return;
+    }
+  } catch (_) {}
+
+  // 3) last fallback: external browser
+  try {
+    if (window.noc?.shellOpenExternal) {
+      const r3 = await window.noc.shellOpenExternal(url);
+      if (r3?.ok) {
+        setStatus('Modrinth открыт во внешнем браузере');
+        return;
+      }
+    }
+  } catch (_) {}
+
+  setStatus('Modrinth: не удалось открыть каталог');
 }
 
 function wireUI() {
