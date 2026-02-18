@@ -12,17 +12,6 @@ permissions:
 
 jobs:
   build-linux:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: AppImage
-            suffix: appimage
-            outExt: AppImage
-          - target: deb
-            suffix: deb
-            outExt: deb
-
     runs-on: ubuntu-latest
 
     steps:
@@ -36,8 +25,8 @@ jobs:
       - name: Install deps
         run: npm ci
 
-      - name: Build Linux ${{ matrix.target }}
-        run: npx electron-builder --linux ${{ matrix.target }} --publish never
+      - name: Build Linux AppImage
+        run: npx electron-builder --linux AppImage --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
@@ -46,20 +35,20 @@ jobs:
         run: |
           ver=$(node -p "require('./package.json').version")
           shopt -s nullglob
-          files=(dist/*.${{ matrix.outExt }})
+          files=(dist/*.AppImage)
           if [ ${#files[@]} -eq 0 ]; then
-            echo "No output .${{ matrix.outExt }} found in dist/"
+            echo "No output .AppImage found in dist/"
             ls -la dist || true
             exit 1
           fi
-          cp "${files[0]}" "dist/NocLauncher-${ver}-linux-x64.${{ matrix.outExt }}"
+          cp "${files[0]}" "dist/NocLauncher-${ver}-linux-x64.AppImage"
 
       - name: Upload to release v1.0.0
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.0
           files: |
-            dist/NocLauncher-*-linux-x64.${{ matrix.outExt }}
+            dist/NocLauncher-*-linux-x64.AppImage
           fail_on_unmatched_files: true
           overwrite_files: true
         env:
