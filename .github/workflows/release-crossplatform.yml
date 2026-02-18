@@ -22,16 +22,16 @@ jobs:
         include:
           - os: windows-latest
             target: win
-            cmd: npm run build:win
+            cmd: npx electron-builder --win --x64 --publish never
           - os: windows-latest
             target: win32
-            cmd: npx electron-builder --win --ia32
+            cmd: npx electron-builder --win --ia32 --publish never
           - os: ubuntu-latest
             target: linux
-            cmd: npm run build:linux
+            cmd: npx electron-builder --linux --publish never
           - os: macos-latest
             target: mac
-            cmd: npm run build:mac
+            cmd: npx electron-builder --mac --publish never
 
     runs-on: ${{ matrix.os }}
 
