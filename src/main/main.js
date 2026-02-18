@@ -4523,7 +4523,7 @@ if (preset && preset !== 'auto') {
         if (safeModsRenamed && !fs.existsSync(modsPath) && fs.existsSync(modsDisabledPath)) fs.renameSync(modsDisabledPath, modsPath);
       } catch (_) {}
 
-      if (!shouldCloseOnLaunch) restoreLauncherAfterGame();
+      if (shouldHideOnLaunch || shouldCloseOnLaunch) restoreLauncherAfterGame();
       const durMs = Date.now() - startedAt;
       const ring = getRingText();
       const ringLower = ring.toLowerCase();
@@ -4560,7 +4560,7 @@ if (preset && preset !== 'auto') {
       proc.on('exit', onClose);
       proc.on('error', (err) => {
         sendLog('error', err?.stack || String(err));
-        if (!shouldCloseOnLaunch) restoreLauncherAfterGame();
+        if (shouldHideOnLaunch || shouldCloseOnLaunch) restoreLauncherAfterGame();
         sendMcState('error', { error: String(err?.message || err), version: resolved.id, logPath, tail: getRingText().slice(-6000) });
       });
     };
@@ -4597,9 +4597,9 @@ if (preset && preset !== 'auto') {
       launchResult.then((proc) => {
         attachProc(proc);
         sendMcState('launched', { version: resolved.id, logPath });
-        if (shouldCloseOnLaunch) {
-          try { setTimeout(() => app.quit(), 250); } catch (_) {}
-        } else if (shouldHideOnLaunch) {
+        // "Закрыть лаунчер" во время игры = убрать окно (не завершать процесс),
+        // чтобы после выхода из игры можно было вернуть лаунчер обратно.
+        if (shouldCloseOnLaunch || shouldHideOnLaunch) {
           hideLauncherForGame();
         }
       }).catch((err) => {
@@ -4610,9 +4610,7 @@ if (preset && preset !== 'auto') {
     } else {
       attachProc(launchResult);
       sendMcState('launched', { version: resolved.id, logPath });
-      if (shouldCloseOnLaunch) {
-        try { setTimeout(() => app.quit(), 250); } catch (_) {}
-      } else if (shouldHideOnLaunch) {
+      if (shouldCloseOnLaunch || shouldHideOnLaunch) {
         hideLauncherForGame();
       }
     }
