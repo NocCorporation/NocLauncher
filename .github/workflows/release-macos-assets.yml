@@ -1,0 +1,64 @@
+name: Upload macOS Assets to v1.0.0
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/release-macos-assets.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            suffix: x64
+          - arch: arm64
+            suffix: arm64
+
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build macOS DMG (${{ matrix.arch }})
+        run: npx electron-builder --mac dmg --${{ matrix.arch }} --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Rename artifact
+        shell: bash
+        run: |
+          ver=$(node -p "require('./package.json').version")
+          shopt -s nullglob
+          files=(dist/*.dmg)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No output .dmg found in dist/"
+            ls -la dist || true
+            exit 1
+          fi
+          cp "${files[0]}" "dist/NocLauncher-${ver}-macos-${{ matrix.suffix }}.dmg"
+
+      - name: Upload to release v1.0.0
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0
+          files: |
+            dist/NocLauncher-*-macos-${{ matrix.suffix }}.dmg
+          fail_on_unmatched_files: true
+          overwrite_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
