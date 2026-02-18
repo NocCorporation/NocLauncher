@@ -743,6 +743,11 @@ function normalizeBaseVersion(v) {
   return m ? m[1] : String(v || '');
 }
 
+function getSelectedBaseVersion() {
+  const requested = $('#versionSelect')?.value || state.settings?.lastVersion || 'latest-release';
+  return normalizeBaseVersion(requested);
+}
+
 function findInstalledLoaderProfile(loaderMode, requested, profiles) {
   const base = normalizeBaseVersion(requested);
   const list = Array.isArray(profiles) ? profiles : [];
