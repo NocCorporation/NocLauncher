@@ -1,63 +1,88 @@
 # NocLauncher
 
-Кастомный Minecraft-лаунчер (Java + Bedrock) с фокусом на стабильность, оффлайн-first сценарии и удобную диагностику.
+<p align="center">
+  <img src="assets/icon.png" alt="NocLauncher" width="120" />
+</p>
 
-## 🔥 Ключевые преимущества
+<p align="center">
+  <b>Кастомный Minecraft Launcher (Java + Bedrock)</b><br>
+  <i>Стабильный оффлайн-first UX, библиотека модов и встроенная диагностика</i>
+</p>
+
+<p align="center">
+  <a href="https://github.com/NocCorporation/NocLauncher/releases/latest">
+    <img alt="Latest Release" src="https://img.shields.io/github/v/release/NocCorporation/NocLauncher?style=flat-square" />
+  </a>
+  <a href="https://github.com/NocCorporation/NocLauncher/releases">
+    <img alt="Downloads" src="https://img.shields.io/github/downloads/NocCorporation/NocLauncher/total?style=flat-square" />
+  </a>
+  <img alt="Platform" src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-4caf50?style=flat-square" />
+  <img alt="License" src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" />
+</p>
+
+---
+
+## ✨ Возможности
 
 - **Java + Bedrock** в одном лаунчере
-- Профили запуска: **Vanilla / Forge / OptiFine**
-- **Offline-first** логика (онлайн auth временно отключён)
-- Оффлайн-скины: файл / ник / URL / авто
+- Профили Java: **Vanilla / Forge / OptiFine**
+- **Offline-first** режим (онлайн-auth отключён намеренно)
+- Библиотека: моды / resourcepacks / shaderpacks
+- Оффлайн-скины: файл / ник / URL
 - Автодобавление серверов в `servers.dat`
-- Встроенная диагностика и логи запуска
-- Оптимизация производительности (FPS preset + JVM tuning)
-- Low-power UI (снижение нагрузки на GPU)
-- Лаунчер уходит в фон при старте игры и возвращается после выхода
+- Логи, диагностика и проверка запуска
+- FPS/JVM настройки и low-power режим UI
 
 ---
 
 ## 📦 Скачать
 
-Релиз: **v1.0.3**
+**Текущий релиз:** `v1.0.4`
 
-- Windows x64: `NocLauncher-1.0.3-windows-x64.exe`
-- Windows x86: `NocLauncher-1.0.3-windows-x86.exe`
-- Linux x64: `NocLauncher-1.0.3-linux-x64.AppImage`
-- macOS: выкатывается отдельным пайплайном
+- Windows x64: `NocLauncher-1.0.4-windows-x64.exe`
+- Windows x86: `NocLauncher-1.0.4-windows-x86.exe`
+- Linux x64: `NocLauncher-1.0.4-linux-x64.AppImage`
+- macOS x64: `NocLauncher-1.0.4-macos-x64.dmg` / `.zip`
 
-> Все бинарники публикуются в **GitHub Releases → Assets**.
+👉 Все файлы доступны в **GitHub Releases → Assets**:
+<https://github.com/NocCorporation/NocLauncher/releases>
 
-### Проверка подлинности (рекомендуется)
+### 🔐 Проверка подлинности
+
+В каждом релизе публикуются `SHA256SUMS-*.txt`.
+
+PowerShell-проверка:
 
 ```powershell
-Get-FileHash .\NocLauncher-1.0.3-windows-x64.exe -Algorithm SHA256
+Get-FileHash .\NocLauncher-1.0.4-windows-x64.exe -Algorithm SHA256
 ```
 
-Сверяйте хэш с `SHA256SUMS-*.txt` из релиза.
+Сверьте результат с хэшами из релиза.
 
 ---
 
 ## 🚀 Быстрый старт
 
 1. Скачайте сборку под вашу ОС из Releases.
-2. Установите/запустите NocLauncher.
+2. Запустите NocLauncher.
 3. Выберите режим: **JAVA** или **BEDROCK**.
-4. Для JAVA выберите версию + тип профиля (Vanilla/Forge/OptiFine).
-5. Введите ник и нажмите **Играть**.
+4. Для JAVA выберите версию и профиль (Vanilla/Forge/OptiFine).
+5. Укажите ник и нажмите **Играть**.
 
 ---
 
 ## 🧭 Документация
 
 - `docs/GUIDE_RU.md` — полный гайд
-- `docs/QUICK_TUTORIALS_RU.md` — мини-туториалы по базовым сценариям
+- `docs/QUICK_TUTORIALS_RU.md` — быстрые сценарии
 - `docs/INSTALL_RU.md` — установка по платформам
 - `docs/USER_MANUAL_RU.md` — эксплуатация и настройки
-- `docs/FEATURES_RU.md` — список возможностей
+- `docs/FEATURES_RU.md` — функции лаунчера
 - `docs/TROUBLESHOOTING_RU.md` — решение частых проблем
-- `docs/FAQ_RU.md` — короткие ответы на важные вопросы
-- `docs/ROADMAP_RU.md` — roadmap и ближайшие этапы
-- `docs/TRUST_AND_SECURITY_RU.md` — как снижать ложные срабатывания AV/SmartScreen
+- `docs/FAQ_RU.md` — краткие ответы
+- `docs/ROADMAP_RU.md` — roadmap
+- `docs/TRUST_AND_SECURITY_RU.md` — снижение ложных AV/SmartScreen срабатываний
+- `docs/RELEASE_TEMPLATE_RU.md` — шаблон официального оформления релиза
 
 ---
 
@@ -70,18 +95,29 @@ npm run build:linux
 npm run build:mac
 ```
 
-Результаты появляются в `dist/`.
+Результат сборки: `dist/`
 
 ---
 
 ## ⚠️ Важно
 
-- Текущий релиз ориентирован на **стабильный offline-first UX**.
-- Онлайн Microsoft-авторизация на данном этапе **намеренно выключена**.
-- Для баг-репорта прикладывайте **лог + шаги воспроизведения + версию игры**.
+- Проект ориентирован на стабильный **offline-first UX**.
+- Для баг-репорта прикладывайте: **лог + шаги + версию игры**.
 
 ---
 
 ## 📄 Лицензия
 
-Проект распространяется под лицензией **MIT** (`LICENSE`).
+MIT (`LICENSE`)
+
+---
+
+## ⭐ Star History
+
+<a href="https://www.star-history.com/#NocCorporation/NocLauncher&type=date&legend=top-left">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=NocCorporation/NocLauncher&type=date&theme=dark&legend=top-left" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=NocCorporation/NocLauncher&type=date&legend=top-left" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=NocCorporation/NocLauncher&type=date&legend=top-left" />
+  </picture>
+</a>

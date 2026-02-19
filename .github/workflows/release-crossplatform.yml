@@ -107,5 +107,25 @@ jobs:
           files: dist/release-assets/*
           fail_on_unmatched_files: false
           generate_release_notes: true
+          body: |
+            ## 🚀 NocLauncher ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
+
+            Официальный релиз NocLauncher.
+
+            ### 📦 Assets
+            - Windows: `.exe`
+            - Linux: `.AppImage`
+            - macOS: `.dmg` / `.zip`
+
+            ### 🔐 Проверка подлинности
+            - В релизе есть файлы `SHA256SUMS-*.txt`
+            - Сверьте SHA256 перед запуском
+
+            ```powershell
+            Get-FileHash .\NocLauncher-<version>-windows-x64.exe -Algorithm SHA256
+            ```
+
+            ### 📝 Changelog
+            Автоматически сгенерирован ниже на основе коммитов и PR.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
