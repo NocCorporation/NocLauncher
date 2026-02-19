@@ -28,7 +28,7 @@ jobs:
             cmd: npx electron-builder --win --ia32 --publish never
           - os: ubuntu-latest
             target: linux
-            cmd: npx electron-builder --linux --publish never
+            cmd: npx electron-builder --linux AppImage --publish never
           - os: macos-latest
             target: mac
             cmd: npx electron-builder --mac --publish never

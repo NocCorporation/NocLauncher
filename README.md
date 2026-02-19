@@ -18,11 +18,11 @@
 
 ## 📦 Скачать
 
-Релиз: **v1.0.1**
+Релиз: **v1.0.2**
 
-- Windows x64: `NocLauncher-1.0.1-windows-x64.exe`
-- Windows x86: `NocLauncher-1.0.1-windows-x86.exe`
-- Linux x64: `NocLauncher-1.0.1-linux-x64.AppImage`
+- Windows x64: `NocLauncher-1.0.2-windows-x64.exe`
+- Windows x86: `NocLauncher-1.0.2-windows-x86.exe`
+- Linux x64: `NocLauncher-1.0.2-linux-x64.AppImage`
 - macOS: выкатывается отдельным пайплайном
 
 > Все бинарники публикуются в **GitHub Releases → Assets**.

@@ -1,6 +1,6 @@
 {
   "name": "noclauncher",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "NocLauncher — multi-functional Minecraft launcher (Electron)",
   "main": "src/main/main.js",
   "author": "NOCTRAZE",
