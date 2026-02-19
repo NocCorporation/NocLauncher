@@ -18,14 +18,22 @@
 
 ## 📦 Скачать
 
-Релиз: **v1.0.2**
+Релиз: **v1.0.3**
 
-- Windows x64: `NocLauncher-1.0.2-windows-x64.exe`
-- Windows x86: `NocLauncher-1.0.2-windows-x86.exe`
-- Linux x64: `NocLauncher-1.0.2-linux-x64.AppImage`
+- Windows x64: `NocLauncher-1.0.3-windows-x64.exe`
+- Windows x86: `NocLauncher-1.0.3-windows-x86.exe`
+- Linux x64: `NocLauncher-1.0.3-linux-x64.AppImage`
 - macOS: выкатывается отдельным пайплайном
 
 > Все бинарники публикуются в **GitHub Releases → Assets**.
+
+### Проверка подлинности (рекомендуется)
+
+```powershell
+Get-FileHash .\NocLauncher-1.0.3-windows-x64.exe -Algorithm SHA256
+```
+
+Сверяйте хэш с `SHA256SUMS-*.txt` из релиза.
 
 ---
 
@@ -49,6 +57,7 @@
 - `docs/TROUBLESHOOTING_RU.md` — решение частых проблем
 - `docs/FAQ_RU.md` — короткие ответы на важные вопросы
 - `docs/ROADMAP_RU.md` — roadmap и ближайшие этапы
+- `docs/TRUST_AND_SECURITY_RU.md` — как снижать ложные срабатывания AV/SmartScreen
 
 ---
 

@@ -73,8 +73,8 @@ jobs:
 
           const isWin = t === 'win' || t === 'win32';
           const exts = isWin
-            ? ['.exe', '.msi', '.blockmap']
-            : (t === 'linux' ? ['.AppImage', '.deb', '.rpm'] : ['.dmg', '.zip']);
+            ? ['.exe']
+            : (t === 'linux' ? ['.AppImage'] : ['.dmg', '.zip']);
 
           const osTag = isWin ? 'windows' : (t === 'linux' ? 'linux' : 'macos');
           const archTag = t === 'win32' ? 'x86' : 'x64';
@@ -106,5 +106,6 @@ jobs:
           tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
           files: dist/release-assets/*
           fail_on_unmatched_files: false
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
