@@ -797,13 +797,17 @@ function openBedrockHubWindow() {
     }
 
     bedrockHubWin = new BrowserWindow({
-      width: 1060,
-      height: 700,
-      minWidth: 920,
-      minHeight: 620,
+      width: 760,
+      height: 480,
+      minWidth: 680,
+      minHeight: 420,
       title: 'NocLauncher — Локальные сервера',
       autoHideMenuBar: true,
-      backgroundColor: '#0b0712',
+      frame: false,
+      transparent: true,
+      hasShadow: false,
+      alwaysOnTop: true,
+      backgroundColor: '#00000000',
       icon: path.join(ASSETS_DIR, 'icon.png'),
       webPreferences: {
         contextIsolation: true,
@@ -928,6 +932,7 @@ app.whenReady().then(async () => {
 
   createSplashWindow();
   createWindow();
+  ensureAutoLocalHostWatcher();
 
   // Lazy optional dependency warm-up (non-blocking)
   ensureOptionalDependency('prismarine-auth').catch(() => {});
@@ -3115,8 +3120,42 @@ function getLocalServersRegistryUrl() {
   return String(store.get('localServersRegistryUrl') || '').trim().replace(/\/+$/, '');
 }
 
+async function probeRegistryBase(base) {
+  const clean = String(base || '').trim().replace(/\/+$/, '');
+  if (!clean) return false;
+  try {
+    const r = await fetch(`${clean}/health`, { headers: { 'User-Agent': 'NocLauncher/1.0' } });
+    return !!(r && r.ok);
+  } catch (_) {
+    return false;
+  }
+}
+
+async function ensureRegistryUrlAuto() {
+  const current = getLocalServersRegistryUrl();
+  if (current && await probeRegistryBase(current)) return current;
+
+  const candidates = [
+    process.env.NOC_REGISTRY_URL || '',
+    'http://127.0.0.1:8787',
+    'http://localhost:8787'
+  ].filter(Boolean);
+
+  for (const c of candidates) {
+    if (await probeRegistryBase(c)) {
+      store.set('localServersRegistryUrl', c);
+      return c;
+    }
+  }
+  return '';
+}
+
+let autoLocalRoomId = null;
+let autoLocalHeartbeatTimer = null;
+let autoLocalWatchTimer = null;
+
 async function localServersApi(pathname, method = 'GET', body = null) {
-  const base = getLocalServersRegistryUrl();
+  const base = await ensureRegistryUrlAuto();
   if (!base) return { ok: false, error: 'registry_not_set' };
   const url = `${base}${pathname.startsWith('/') ? '' : '/'}${pathname}`;
   try {
@@ -3133,6 +3172,52 @@ async function localServersApi(pathname, method = 'GET', body = null) {
   } catch (e) {
     return { ok: false, error: String(e?.message || e) };
   }
+}
+
+function stopAutoLocalHeartbeat() {
+  if (autoLocalHeartbeatTimer) {
+    clearInterval(autoLocalHeartbeatTimer);
+    autoLocalHeartbeatTimer = null;
+  }
+}
+
+function startAutoLocalHeartbeat() {
+  stopAutoLocalHeartbeat();
+  autoLocalHeartbeatTimer = setInterval(async () => {
+    try { await localServersApi('/world/heartbeat', 'POST', { hostId: getLocalServersHostId(), roomId: autoLocalRoomId }); } catch (_) {}
+  }, 15000);
+}
+
+function ensureAutoLocalHostWatcher() {
+  if (autoLocalWatchTimer) return;
+  autoLocalWatchTimer = setInterval(async () => {
+    try {
+      const running = isBedrockRunning();
+      const worldOpen = isBedrockWorldOpen();
+      if (running && worldOpen && !autoLocalRoomId) {
+        const opened = await localServersApi('/world/open', 'POST', {
+          hostId: getLocalServersHostId(),
+          hostName: String(store.get('lastUsername') || 'Host'),
+          worldName: 'Мой Bedrock мир',
+          gameVersion: 'bedrock',
+          mode: 'survival',
+          connect: { type: 'direct', ip: '', port: 19132 },
+          isPrivate: false,
+          joinCode: null,
+          maxPlayers: 10
+        });
+        if (opened?.ok) {
+          autoLocalRoomId = opened.roomId || opened.id || null;
+          startAutoLocalHeartbeat();
+        }
+      }
+      if ((!running || !worldOpen) && autoLocalRoomId) {
+        await localServersApi('/world/close', 'POST', { hostId: getLocalServersHostId(), roomId: autoLocalRoomId });
+        autoLocalRoomId = null;
+        stopAutoLocalHeartbeat();
+      }
+    } catch (_) {}
+  }, 5000);
 }
 
 ipcMain.handle('localservers:list', async () => {
@@ -3187,14 +3272,18 @@ ipcMain.handle('localservers:joinByCode', async (_e, payload) => {
 });
 
 ipcMain.handle('bedrock:hubOpen', async () => {
+  ensureAutoLocalHostWatcher();
   return openBedrockHubWindow();
 });
 
 ipcMain.handle('bedrock:hostStatus', async () => {
+  const registryUrl = await ensureRegistryUrlAuto();
   return {
     ok: true,
     bedrockRunning: isBedrockRunning(),
-    worldOpen: isBedrockWorldOpen()
+    worldOpen: isBedrockWorldOpen(),
+    registryUrl,
+    autoHosting: !!autoLocalRoomId
   };
 });
 
@@ -3623,6 +3712,7 @@ ipcMain.handle('bedrock:launch', async () => {
     hideLauncherForGame();
     await shell.openExternal('minecraft://');
     watchBedrockAndRestore();
+    ensureAutoLocalHostWatcher();
     // Show Omlet-like local servers hub window alongside Bedrock session
     setTimeout(() => { try { openBedrockHubWindow(); } catch (_) {} }, 900);
     return { ok: true };
