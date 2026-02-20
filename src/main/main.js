@@ -868,20 +868,56 @@ function isBedrockRunning() {
   return false;
 }
 
-function isBedrockWorldOpen() {
+function hasRecentBedrockWorldActivity(maxAgeMs = 180000) {
   try {
-    // More reliable: check UDP endpoints owned by Minecraft process
-    const ps = "$pids=(Get-Process Minecraft.Windows,MinecraftWindowsBeta -ErrorAction SilentlyContinue|Select-Object -ExpandProperty Id); if(-not $pids){'0';exit}; $eps=Get-NetUDPEndpoint -ErrorAction SilentlyContinue | Where-Object { $pids -contains $_.OwningProcess -and ($_.LocalPort -eq 19132 -or $_.LocalPort -eq 19133) }; if($eps){'1'}else{'0'}";
-    const out = execFileSync('powershell', ['-NoProfile', '-Command', ps], { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
-    return out === '1';
+    const p = bedrockPaths();
+    const worldsDir = p?.worlds;
+    if (!worldsDir || !fs.existsSync(worldsDir)) return false;
+    const list = fs.readdirSync(worldsDir, { withFileTypes: true }).filter(d => d.isDirectory());
+    const nowTs = Date.now();
+    for (const d of list) {
+      const wp = path.join(worldsDir, d.name);
+      const m = fs.statSync(wp).mtimeMs || 0;
+      if (nowTs - m <= maxAgeMs) return true;
+      const levelname = path.join(wp, 'levelname.txt');
+      if (fs.existsSync(levelname)) {
+        const m2 = fs.statSync(levelname).mtimeMs || 0;
+        if (nowTs - m2 <= maxAgeMs) return true;
+      }
+    }
+    return false;
+  } catch (_) {
+    return false;
+  }
+}
+
+function isBedrockWorldOpen() {
+  // HARD signal: default Bedrock host ports are opened by Minecraft process.
+  try {
+    const psHard = "$pids=(Get-Process Minecraft.Windows,MinecraftWindowsBeta -ErrorAction SilentlyContinue|Select-Object -ExpandProperty Id); if(-not $pids){'0';exit}; $eps=Get-NetUDPEndpoint -ErrorAction SilentlyContinue | Where-Object { $pids -contains $_.OwningProcess -and ($_.LocalPort -eq 19132 -or $_.LocalPort -eq 19133) }; if($eps){'1'}else{'0'}";
+    const outHard = execFileSync('powershell', ['-NoProfile', '-Command', psHard], { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+    if (outHard === '1') return true;
+  } catch (_) {}
+
+  // SOFT signals (to reduce false negatives):
+  // 1) Minecraft owns any UDP endpoint right now
+  // 2) world files had recent activity
+  let udpOwnedByMinecraft = false;
+  try {
+    const psSoft = "$pids=(Get-Process Minecraft.Windows,MinecraftWindowsBeta -ErrorAction SilentlyContinue|Select-Object -ExpandProperty Id); if(-not $pids){'0';exit}; $eps=Get-NetUDPEndpoint -ErrorAction SilentlyContinue | Where-Object { $pids -contains $_.OwningProcess }; if($eps){'1'}else{'0'}";
+    const outSoft = execFileSync('powershell', ['-NoProfile', '-Command', psSoft], { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+    udpOwnedByMinecraft = outSoft === '1';
   } catch (_) {
     try {
       const out = execFileSync('netstat', ['-ano', '-p', 'udp'], { stdio: ['ignore', 'pipe', 'ignore'] }).toString();
-      return /:19132\s|:19133\s/.test(out);
+      udpOwnedByMinecraft = /UDP\s+[^\n]+/i.test(out);
     } catch (__){
-      return false;
+      udpOwnedByMinecraft = false;
     }
   }
+
+  const recentWorldActivity = hasRecentBedrockWorldActivity(180000);
+  return !!(isBedrockRunning() && (udpOwnedByMinecraft || recentWorldActivity));
 }
 
 function watchBedrockAndRestore() {
