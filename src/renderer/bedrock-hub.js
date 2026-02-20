@@ -60,7 +60,7 @@
       const disabled = !ip;
       return `<div class="item">
         <div>
-          <div class="name">${name}</div>
+          <div class="name">${name}<span class="badge">ONLINE</span></div>
           <div class="meta">Host: ${host} • ${ip ? `${ip}:${port}` : 'адрес скрыт'} • v${ver} • ${currentPlayers}/${maxPlayers}</div>
         </div>
         <button class="btn ${disabled ? '' : 'acc'}" data-ip="${ip}" data-port="${port}" ${disabled ? 'disabled' : ''}>Присоединиться</button>

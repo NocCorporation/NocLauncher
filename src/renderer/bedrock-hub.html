@@ -14,6 +14,8 @@
     .curtain.bottom{margin-top:6px;margin-bottom:0}
     .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
     .title{font-weight:900;font-size:16px}
+    .miniIcons{display:flex;gap:6px;margin-bottom:7px}
+    .miniIco{width:28px;height:28px;border-radius:999px;display:grid;place-items:center;background:rgba(255,255,255,.1);border:1px solid rgba(255,153,51,.35);font-size:13px}
     .btn{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;border-radius:10px;padding:6px 9px;font-weight:800;cursor:pointer}
     .btn.acc{background:linear-gradient(135deg,#ff7f1f,#ff9d46);color:#2f1600;border:0}
     .hint{font-size:12px;color:var(--muted);margin-bottom:7px}
@@ -22,12 +24,16 @@
     .item{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,153,51,.32);border-radius:10px;padding:8px;margin-bottom:6px}
     .name{font-weight:800;font-size:14px}
     .meta{font-size:12px;color:var(--muted)}
+    .badge{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:999px;background:rgba(255,143,42,.22);border:1px solid rgba(255,153,51,.5);color:#ffbf8a;font-size:10px;font-weight:900;vertical-align:middle}
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="shell">
       <div class="curtain">MULTIPLAYER HUB • NOC ARCADE STYLE</div>
+      <div class="miniIcons" aria-hidden="true">
+        <span class="miniIco">⚙️</span><span class="miniIco">🎥</span><span class="miniIco">👥</span><span class="miniIco">🌐</span><span class="miniIco">🕹️</span>
+      </div>
       <div class="top">
         <div class="title">Noc • Мультиплеер Bedrock</div>
         <button class="btn" id="btnCloseWin">✕</button>
