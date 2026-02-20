@@ -2,6 +2,7 @@
   const $ = (s) => document.querySelector(s);
   let hostWanted = false;
   let visibility = 'public';
+  let streamerMode = false;
 
   function setHostStatus(t) { const el = $('#hostStatus'); if (el) el.textContent = t; }
   function setInviteStatus(t) { const el = $('#inviteStatus'); if (el) el.textContent = t || ''; }
@@ -20,6 +21,15 @@
     btn.textContent = `Приватность: ${visibility}`;
   }
 
+  function paintStreamerMode() {
+    const btn = $('#btnStreamer');
+    if (!btn) return;
+    btn.textContent = `Стример-режим: ${streamerMode ? 'ON' : 'OFF'}`;
+    btn.classList.toggle('acc', streamerMode);
+    const inp = $('#inviteCode');
+    if (inp) inp.type = streamerMode ? 'password' : 'text';
+  }
+
   async function refreshDiagnostics() {
     const [p, c] = await Promise.all([
       window.noc.bedrockPathInfo().catch(() => null),
@@ -29,8 +39,11 @@
     const worlds = Number(p?.worldsCount || 0);
     const path = String(p?.comMojang || '').replace(/\\/g, '/');
     const reg = c?.registryOk ? 'ok' : 'fail';
-    const ip = c?.publicIp || 'n/a';
-    setDiagStatus(`Path[${src}] worlds=${worlds} • registry=${reg} • ip=${ip} • ${path}`);
+    if (streamerMode) {
+      setDiagStatus(`Streamer mode ON • worlds=${worlds} • registry=${reg}`);
+    } else {
+      setDiagStatus(`Path[${src}] worlds=${worlds} • registry=${reg} • ${path}`);
+    }
   }
 
   async function refresh() {
@@ -98,9 +111,9 @@
     }
 
     if (!s.bedrockRunning) {
-      setHostStatus(`Реестр: ${s.registryUrl}. Bedrock не запущен. Нажми «Открыть мир».`);
+      setHostStatus(streamerMode ? 'Bedrock не запущен. Нажми «Открыть мир».' : `Реестр подключен. Bedrock не запущен. Нажми «Открыть мир».`);
     } else if (!s.worldOpen && !hostWanted) {
-      setHostStatus(`Реестр: ${s.registryUrl}. Открой мир для сети или включи хост.`);
+      setHostStatus(streamerMode ? 'Открой мир для сети или включи хост.' : `Реестр подключен. Открой мир для сети или включи хост.`);
     } else if (s.autoHosting) {
       setHostStatus(`Мир «${s.worldName || 'Bedrock'}» опубликован ✅ Игроки: ${s.currentPlayers || 0}/${s.maxPlayers || 10}`);
     } else {
@@ -112,6 +125,12 @@
     const vg = await window.noc.localServersVisibilityGet().catch(() => ({ ok:false }));
     visibility = vg?.ok ? String(vg.visibility || 'public') : 'public';
     paintVisibility();
+
+    try {
+      const st = await window.noc.settingsGet();
+      streamerMode = !!st?.streamerMode;
+    } catch (_) { streamerMode = false; }
+    paintStreamerMode();
 
     $('#btnRefresh')?.addEventListener('click', async () => { await refresh(); await refreshDiagnostics(); });
     $('#btnOpenWorld')?.addEventListener('click', async () => {
@@ -136,6 +155,15 @@
       await refreshDiagnostics();
     });
 
+    $('#btnStreamer')?.addEventListener('click', async () => {
+      streamerMode = !streamerMode;
+      try { await window.noc.settingsSet({ streamerMode }); } catch (_) {}
+      paintStreamerMode();
+      setInviteStatus(streamerMode ? 'Стример-режим включён: чувствительные данные скрыты.' : 'Стример-режим выключен.');
+      await refreshDiagnostics();
+      await checkBedrockStatus();
+    });
+
     $('#btnShareInvite')?.addEventListener('click', async () => {
       const r = await window.noc.localServersInviteCreate();
       if (!r?.ok) {
@@ -144,8 +172,12 @@
       }
       const code = String(r.code || '');
       const link = `noclauncher://join/${code}`;
-      try { await navigator.clipboard.writeText(link); setInviteStatus(`Ссылка скопирована: ${link}`); }
-      catch { setInviteStatus(`Код приглашения: ${code}`); }
+      try {
+        await navigator.clipboard.writeText(link);
+        setInviteStatus(streamerMode ? 'Инвайт создан и скопирован.' : `Ссылка скопирована: ${link}`);
+      } catch {
+        setInviteStatus(streamerMode ? 'Инвайт создан.' : `Код приглашения: ${code}`);
+      }
       const inp = $('#inviteCode');
       if (inp) inp.value = code;
     });
