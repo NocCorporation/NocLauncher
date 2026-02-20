@@ -1267,6 +1267,22 @@ body.mode-bedrock #modeBedrock,
 .modalTools{
   flex-wrap: wrap;
 }
+
+/* Local servers list */
+.localSrvItem{
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.03);
+  margin-bottom: 8px;
+}
+.localSrvName{ font-weight: 900; }
+.localSrvMeta{ color: rgba(255,255,255,.65); font-size: 12px; margin-top: 2px; }
+
 @media (max-height: 720px){
   .modalCard{ max-height: 90vh; }
   .modalCard .list,

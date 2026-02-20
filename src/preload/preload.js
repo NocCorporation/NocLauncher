@@ -127,6 +127,13 @@ modsList: () => ipcRenderer.invoke('mods:list'),
   velorenEnsureLatestAndLaunch: () => ipcRenderer.invoke('veloren:ensureLatestAndLaunch'),
   velorenOpenDir: () => ipcRenderer.invoke('veloren:openDir'),
 
+  // Bedrock local servers registry (MVP)
+  localServersList: () => ipcRenderer.invoke('localservers:list'),
+  localServersOpen: (payload) => ipcRenderer.invoke('localservers:open', payload),
+  localServersClose: (payload) => ipcRenderer.invoke('localservers:close', payload),
+  localServersHeartbeat: (payload) => ipcRenderer.invoke('localservers:heartbeat', payload),
+  localServersJoinByCode: (payload) => ipcRenderer.invoke('localservers:joinByCode', payload),
+
   onLog: (cb) => ipcRenderer.on('log', (_e, d) => cb(d)),
   onDownload: (cb) => ipcRenderer.on('download', (_e, d) => cb(d)),
   onMcState: (cb) => ipcRenderer.on('mc:state', (_e, d) => cb(d)),

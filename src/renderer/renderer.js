@@ -710,7 +710,9 @@ const state = {
   authLog: [],
   lastServerSyncTs: 0,
   cachedServerSyncOk: false,
-  fxStarted: false
+  fxStarted: false,
+  localServersRoomId: null,
+  localServersHeartbeatTimer: null
 };
 
 function setStatus(t) {
@@ -2258,6 +2260,68 @@ async function openModrinthCatalogFromUI() {
   try { await window.noc.shellOpenExternal(url); } catch (_) {}
 }
 
+function renderLocalServers(items = []) {
+  const root = $('#localServersList');
+  if (!root) return;
+  if (!Array.isArray(items) || !items.length) {
+    root.innerHTML = '<div class="help">Активных локальных серверов пока нет.</div>';
+    return;
+  }
+  root.innerHTML = items.map((s, i) => {
+    const name = String(s.worldName || s.name || `Сервер #${i + 1}`);
+    const host = String(s.hostName || s.owner || 'unknown');
+    const ip = String(s.connect?.ip || s.ip || '');
+    const port = Number(s.connect?.port || s.port || 19132);
+    const ver = String(s.gameVersion || s.version || '—');
+    const roomId = String(s.roomId || s.id || '');
+    const connectDisabled = !ip;
+    return `<div class="localSrvItem">
+      <div>
+        <div class="localSrvName">${name}</div>
+        <div class="localSrvMeta">Хост: ${host} • ${ip ? `${ip}:${port}` : 'адрес скрыт'} • ${ver}</div>
+      </div>
+      <button class="btn mini ${connectDisabled ? 'ghost' : ''}" data-local-connect="${roomId}" data-ip="${ip}" data-port="${port}" ${connectDisabled ? 'disabled' : ''}>Подключиться</button>
+    </div>`;
+  }).join('');
+
+  root.querySelectorAll('[data-local-connect]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const ip = String(btn.getAttribute('data-ip') || '');
+      const port = Number(btn.getAttribute('data-port') || 19132);
+      if (!ip) return;
+      const uri = `minecraft://?addExternalServer=${encodeURIComponent('Noc Local')}|${ip}:${port}`;
+      try { await window.noc.shellOpenExternal(uri); } catch (_) {}
+      setHint('localServersHint', `Ссылка на подключение открыта: ${ip}:${port}`);
+    });
+  });
+}
+
+async function refreshLocalServers() {
+  setHint('localServersHint', 'Обновляю список...');
+  const r = await window.noc.localServersList();
+  if (!r?.ok) {
+    renderLocalServers([]);
+    setHint('localServersHint', `Ошибка реестра: ${r?.error || 'unknown'}`);
+    return;
+  }
+  renderLocalServers(r.servers || []);
+  setHint('localServersHint', `Найдено серверов: ${(r.servers || []).length}`);
+}
+
+function stopLocalServersHeartbeat() {
+  if (state.localServersHeartbeatTimer) {
+    clearInterval(state.localServersHeartbeatTimer);
+    state.localServersHeartbeatTimer = null;
+  }
+}
+
+function startLocalServersHeartbeat() {
+  stopLocalServersHeartbeat();
+  state.localServersHeartbeatTimer = setInterval(async () => {
+    try { await window.noc.localServersHeartbeat({ roomId: state.localServersRoomId }); } catch (_) {}
+  }, 15000);
+}
+
 function wireUI() {
   // Custom loader dropdown (prevents native white select menu)
   try { initLoaderDropdown(); } catch (_) {}
@@ -2289,6 +2353,48 @@ function wireUI() {
   $('#btnOpenSettings')?.addEventListener('click', () => openModal('modalSettings'));
   // Secondary settings button in the header row
   $('#btnOpenSettings2')?.addEventListener('click', () => openModal('modalSettings'));
+
+  $('#btnLocalServers')?.addEventListener('click', async () => {
+    try {
+      const url = String(state.settings?.localServersRegistryUrl || '');
+      if ($('#localServersRegistryUrl')) $('#localServersRegistryUrl').value = url;
+    } catch (_) {}
+    openModal('modalLocalServers');
+    await refreshLocalServers();
+  });
+  $('#btnCloseLocalServers')?.addEventListener('click', () => closeModal('modalLocalServers'));
+  $('#btnLocalServersRefresh')?.addEventListener('click', refreshLocalServers);
+  $('#btnSaveLocalServersRegistry')?.addEventListener('click', async () => {
+    const url = String($('#localServersRegistryUrl')?.value || '').trim();
+    state.settings = await window.noc.settingsSet({ localServersRegistryUrl: url });
+    setHint('localServersHint', url ? 'URL реестра сохранён.' : 'URL очищен.');
+  });
+  $('#btnLocalWorldOpen')?.addEventListener('click', async () => {
+    const worldName = String($('#localWorldName')?.value || 'Мой мир Bedrock').trim();
+    const port = Number($('#localWorldPort')?.value || 19132) || 19132;
+    const ip = String(state.settings?.publicIp || '').trim();
+    const r = await window.noc.localServersOpen({
+      worldName,
+      gameVersion: getSelectedBaseVersion(),
+      hostName: String($('#username')?.value || state.settings?.lastUsername || 'Host'),
+      connect: { type: 'direct', ip, port }
+    });
+    if (!r?.ok) {
+      setHint('localServersHint', `Не удалось открыть: ${r?.error || 'unknown'}. Укажи реальный внешний IP в API/реестре.`);
+      return;
+    }
+    state.localServersRoomId = r.roomId || r.id || null;
+    startLocalServersHeartbeat();
+    setHint('localServersHint', 'Мир открыт и публикуется в реестре.');
+    await refreshLocalServers();
+  });
+  $('#btnLocalWorldClose')?.addEventListener('click', async () => {
+    const r = await window.noc.localServersClose({ roomId: state.localServersRoomId });
+    stopLocalServersHeartbeat();
+    state.localServersRoomId = null;
+    setHint('localServersHint', r?.ok ? 'Публикация мира остановлена.' : `Ошибка: ${r?.error || 'unknown'}`);
+    await refreshLocalServers();
+  });
 
   // Mods (must be clickable immediately after start)
   $('#btnMods')?.addEventListener('click', async () => {
@@ -2829,6 +2935,7 @@ function wireUI() {
     if (!$('#modalSettings')?.classList.contains('hidden')) closeModal('modalSettings');
     if (!$('#modalCrash')?.classList.contains('hidden')) closeModal('modalCrash');
     if (!$('#modalBedrockVersions')?.classList.contains('hidden')) closeModal('modalBedrockVersions');
+    if (!$('#modalLocalServers')?.classList.contains('hidden')) closeModal('modalLocalServers');
     if (!$('#modalProfiles')?.classList.contains('hidden')) closeModal('modalProfiles');
     if (!$('#modalAuth')?.classList.contains('hidden')) closeModal('modalAuth');
   });

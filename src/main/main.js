@@ -535,7 +535,9 @@ const store = new Store({
     safeLaunchNoMods: false,
     autoFixOnCrash: true,
     uiLowPower: true,
-    closeLauncherOnGameStart: false
+    closeLauncherOnGameStart: false,
+    localServersRegistryUrl: '',
+    localServersHostId: ''
   }
 });
 
@@ -3055,6 +3057,80 @@ ipcMain.handle('instance:importDotMinecraft', async () => {
   const settings = store.store;
   const gameDir = resolveActiveGameDir(settings);
   return await importFromMinecraftDot(settings, gameDir);
+});
+
+function getLocalServersHostId() {
+  let id = String(store.get('localServersHostId') || '').trim();
+  if (!id) {
+    id = randomUUID();
+    store.set('localServersHostId', id);
+  }
+  return id;
+}
+
+function getLocalServersRegistryUrl() {
+  return String(store.get('localServersRegistryUrl') || '').trim().replace(/\/+$/, '');
+}
+
+async function localServersApi(pathname, method = 'GET', body = null) {
+  const base = getLocalServersRegistryUrl();
+  if (!base) return { ok: false, error: 'registry_not_set' };
+  const url = `${base}${pathname.startsWith('/') ? '' : '/'}${pathname}`;
+  try {
+    const r = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json', 'User-Agent': 'NocLauncher/1.0' },
+      body: body ? JSON.stringify(body) : undefined
+    });
+    const text = await r.text();
+    let json = null;
+    try { json = text ? JSON.parse(text) : {}; } catch (_) { json = { ok: r.ok, raw: text }; }
+    if (!r.ok) return { ok: false, error: json?.error || `http_${r.status}`, status: r.status };
+    return json && typeof json === 'object' ? json : { ok: true, data: json };
+  } catch (e) {
+    return { ok: false, error: String(e?.message || e) };
+  }
+}
+
+ipcMain.handle('localservers:list', async () => {
+  const r = await localServersApi('/world/list', 'GET');
+  if (!r?.ok) return r;
+  return { ok: true, servers: Array.isArray(r.servers) ? r.servers : (Array.isArray(r.items) ? r.items : []) };
+});
+
+ipcMain.handle('localservers:open', async (_e, payload) => {
+  const hostId = getLocalServersHostId();
+  const settings = store.store || {};
+  const data = {
+    hostId,
+    hostName: String(payload?.hostName || settings.lastUsername || 'Host'),
+    worldName: String(payload?.worldName || 'Bedrock world'),
+    gameVersion: String(payload?.gameVersion || settings.lastVersion || ''),
+    mode: String(payload?.mode || 'survival'),
+    connect: {
+      type: String(payload?.connect?.type || 'direct'),
+      ip: String(payload?.connect?.ip || ''),
+      port: Number(payload?.connect?.port || 19132)
+    },
+    isPrivate: !!payload?.isPrivate,
+    joinCode: payload?.joinCode ? String(payload.joinCode) : null,
+    maxPlayers: Number(payload?.maxPlayers || 10)
+  };
+  return await localServersApi('/world/open', 'POST', data);
+});
+
+ipcMain.handle('localservers:heartbeat', async (_e, payload) => {
+  const hostId = getLocalServersHostId();
+  return await localServersApi('/world/heartbeat', 'POST', { hostId, roomId: payload?.roomId || null });
+});
+
+ipcMain.handle('localservers:close', async (_e, payload) => {
+  const hostId = getLocalServersHostId();
+  return await localServersApi('/world/close', 'POST', { hostId, roomId: payload?.roomId || null });
+});
+
+ipcMain.handle('localservers:joinByCode', async (_e, payload) => {
+  return await localServersApi('/world/join-by-code', 'POST', { joinCode: String(payload?.joinCode || '') });
 });
 
 ipcMain.handle('shell:openExternal', async (_e, payload) => {

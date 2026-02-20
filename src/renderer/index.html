@@ -46,6 +46,11 @@
               <span class="sbIco" aria-hidden="true">🧱</span>
               <span class="sbLbl">Моды</span>
             </button>
+
+            <button class="sbItem" id="btnLocalServers" type="button" aria-label="Локальные сервера" title="Локальные сервера Bedrock">
+              <span class="sbIco" aria-hidden="true">🌐</span>
+              <span class="sbLbl">Локальные сервера</span>
+            </button>
           </nav>
 
           <div class="sbDivider"></div>
@@ -534,6 +539,34 @@
               <div class="help">Я сохраню PNG в папку Bedrock. В игре открой: Профиль → Редактировать персонажа → Импорт.</div>
               <div class="lbl" id="bedrockSkinLast" style="margin-top:10px;">—</div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Local servers modal -->
+      <div class="modal hidden" id="modalLocalServers" role="dialog" aria-label="Локальные сервера" aria-modal="true">
+        <div class="modalCard" style="max-width: 980px;">
+          <div class="modalHead">
+            <div class="modalTitle">Локальные сервера Bedrock</div>
+            <button class="iconBtn" id="btnCloseLocalServers" type="button" aria-label="Закрыть">✕</button>
+          </div>
+          <div class="form">
+            <div class="formRow">
+              <div class="help">Здесь отображаются миры игроков, которые открыли доступ через реестр комнат. Для работы укажи URL реестра в настройках.</div>
+            </div>
+            <div class="formRow actionsRow">
+              <input class="input" id="localServersRegistryUrl" placeholder="URL реестра (пример: https://example.com/api)" />
+              <button class="btn mini" id="btnSaveLocalServersRegistry" type="button">Сохранить</button>
+              <button class="btn mini ghost" id="btnLocalServersRefresh" type="button">Обновить</button>
+            </div>
+            <div class="formRow actionsRow">
+              <input class="inputMini" id="localWorldName" placeholder="Название твоего мира" />
+              <input class="inputMini" id="localWorldPort" placeholder="Порт Bedrock (19132)" />
+              <button class="btn mini" id="btnLocalWorldOpen" type="button">Открыть мой мир</button>
+              <button class="btn mini ghost" id="btnLocalWorldClose" type="button">Закрыть мой мир</button>
+            </div>
+            <div class="list" id="localServersList"></div>
+            <div class="help" id="localServersHint">—</div>
           </div>
         </div>
       </div>
