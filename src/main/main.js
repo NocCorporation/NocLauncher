@@ -978,6 +978,8 @@ async function tryJoinByInviteCode(code) {
     const port = Number(room?.connect?.port || 19132);
     if (!ip) return { ok: false, error: 'no_ip' };
     await shell.openExternal(`minecraft://?addExternalServer=${encodeURIComponent(room.worldName || 'Noc World')}|${ip}:${port}`);
+    // Nudge Bedrock to foreground so user can immediately join from Servers tab.
+    setTimeout(() => { try { shell.openExternal('minecraft://'); } catch (_) {} }, 700);
     return { ok: true };
   } catch (e) {
     return { ok: false, error: String(e?.message || e) };

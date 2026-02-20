@@ -88,7 +88,8 @@
     const s = await window.noc.bedrockHostStatus();
     if (!s?.ok) return;
 
-    hostWanted = !!s.manualHostWanted;
+    // Show HOST ON automatically when world is detected/published.
+    hostWanted = !!(s.manualHostWanted || s.autoHosting);
     paintHostToggle();
 
     if (!s.registryUrl) {
@@ -165,7 +166,8 @@
       const port = Number(r.room?.connect?.port || 19132);
       if (!ip) { setInviteStatus('У хоста нет публичного адреса.'); return; }
       await window.noc.shellOpenExternal(`minecraft://?addExternalServer=${encodeURIComponent(r.room.worldName || 'Noc World')}|${ip}:${port}`);
-      setInviteStatus(`Подключение открыто: ${ip}:${port}`);
+      setTimeout(() => { window.noc.shellOpenExternal('minecraft://').catch(() => {}); }, 700);
+      setInviteStatus(`Сервер добавлен и Bedrock открыт: ${ip}:${port}`);
     });
 
     $('#btnCloseWin')?.addEventListener('click', () => window.close());
