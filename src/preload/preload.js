@@ -144,6 +144,7 @@ modsList: () => ipcRenderer.invoke('mods:list'),
   localServersInviteCreate: () => ipcRenderer.invoke('localservers:inviteCreate'),
   localServersInviteResolve: (code) => ipcRenderer.invoke('localservers:inviteResolve', { code }),
   localServersInviteRevoke: (code) => ipcRenderer.invoke('localservers:inviteRevoke', { code }),
+  localServersJoinByCodeOpen: (code) => ipcRenderer.invoke('localservers:joinByCodeOpen', { code }),
 
   onLog: (cb) => ipcRenderer.on('log', (_e, d) => cb(d)),
   onDownload: (cb) => ipcRenderer.on('download', (_e, d) => cb(d)),

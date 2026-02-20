@@ -9,6 +9,8 @@ const HOST = process.env.HOST || '0.0.0.0';
 const ROOM_TTL_MS = Number(process.env.ROOM_TTL_MS || 60000);
 const MAX_ROOMS_PER_HOST = Number(process.env.MAX_ROOMS_PER_HOST || 3);
 const INVITE_TTL_MS = Number(process.env.INVITE_TTL_MS || 3600000);
+const RELAY_PUBLIC_HOST = String(process.env.RELAY_PUBLIC_HOST || '').trim();
+const RELAY_PUBLIC_PORT = Number(process.env.RELAY_PUBLIC_PORT || 19140);
 
 /** @type {Map<string, any>} */
 const rooms = new Map();
@@ -69,6 +71,7 @@ function sanitizeRoom(input) {
   const joinCode = input?.joinCode ? String(input.joinCode).trim().slice(0, 64) : null;
   const maxPlayers = Math.max(1, Math.min(100, Number(input?.maxPlayers || 10)));
   const currentPlayers = Math.max(0, Math.min(maxPlayers, Number(input?.currentPlayers ?? 1)));
+  const transportPolicy = String(input?.transportPolicy || 'auto').trim().toLowerCase();
 
   return {
     hostId,
@@ -80,7 +83,8 @@ function sanitizeRoom(input) {
     isPrivate,
     joinCode,
     maxPlayers,
-    currentPlayers
+    currentPlayers,
+    transportPolicy: ['auto','direct-only','relay-preferred'].includes(transportPolicy) ? transportPolicy : 'auto'
   };
 }
 
@@ -99,6 +103,8 @@ function activeRoomList() {
       isPrivate: r.isPrivate,
       maxPlayers: r.maxPlayers,
       currentPlayers: r.currentPlayers,
+      transportPolicy: r.transportPolicy || 'auto',
+      relay: RELAY_PUBLIC_HOST ? { host: RELAY_PUBLIC_HOST, port: RELAY_PUBLIC_PORT } : null,
       createdAt: r.createdAt,
       lastHeartbeatAt: r.lastHeartbeatAt
     }));
@@ -267,6 +273,28 @@ const server = http.createServer(async (req, res) => {
       if (!inv || inv.hostId !== hostId) return send(res, 404, { ok: false, error: 'invite_not_found' });
       invites.delete(code);
       return send(res, 200, { ok: true });
+    }
+
+    if (req.method === 'GET' && path === '/route/resolve') {
+      const roomId = String(u.searchParams.get('roomId') || '').trim();
+      if (!roomId) return send(res, 400, { ok: false, error: 'roomId_required' });
+      const room = rooms.get(roomId);
+      if (!room) return send(res, 404, { ok: false, error: 'room_not_found' });
+
+      const directReady = !!(room.connect?.ip && room.connect?.port);
+      let route = 'direct';
+      if (room.transportPolicy === 'direct-only') route = 'direct';
+      else if (room.transportPolicy === 'relay-preferred' && RELAY_PUBLIC_HOST) route = 'relay';
+      else if (!directReady && RELAY_PUBLIC_HOST) route = 'relay';
+      else route = 'direct';
+
+      return send(res, 200, {
+        ok: true,
+        route,
+        direct: directReady ? { ip: room.connect.ip, port: room.connect.port } : null,
+        relay: RELAY_PUBLIC_HOST ? { host: RELAY_PUBLIC_HOST, port: RELAY_PUBLIC_PORT } : null,
+        room
+      });
     }
 
     return send(res, 404, { ok: false, error: 'not_found' });

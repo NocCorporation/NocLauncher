@@ -977,6 +977,36 @@ function extractInviteCodeFromArgv(argv = []) {
   return '';
 }
 
+async function routeResolveRoom(base, room) {
+  try {
+    const roomId = String(room?.roomId || room?.id || '').trim();
+    if (!roomId) return { ok: false, error: 'room_id_missing' };
+    const r = await fetch(`${base}/route/resolve?roomId=${encodeURIComponent(roomId)}`, { headers: { 'User-Agent': 'NocLauncher/1.0' } });
+    const j = await r.json();
+    if (!r.ok || !j?.ok) return { ok: false, error: j?.error || `http_${r.status}` };
+    return j;
+  } catch (e) {
+    return { ok: false, error: String(e?.message || e) };
+  }
+}
+
+async function openBedrockJoinTarget(room, routeData) {
+  const name = encodeURIComponent(room?.worldName || 'Noc World');
+  let host = String(routeData?.direct?.ip || room?.connect?.ip || '').trim();
+  let port = Number(routeData?.direct?.port || room?.connect?.port || 19132);
+
+  if (routeData?.route === 'relay' && routeData?.relay?.host && routeData?.relay?.port) {
+    host = String(routeData.relay.host || '').trim();
+    port = Number(routeData.relay.port || port);
+  }
+
+  if (!host) return { ok: false, error: 'no_route_host' };
+
+  await shell.openExternal(`minecraft://?addExternalServer=${name}|${host}:${port}`);
+  setTimeout(() => { try { shell.openExternal('minecraft://'); } catch (_) {} }, 700);
+  return { ok: true, route: routeData?.route || 'direct', host, port };
+}
+
 async function tryJoinByInviteCode(code) {
   const c = String(code || '').trim().toUpperCase();
   if (!c) return { ok: false, error: 'code_required' };
@@ -987,13 +1017,12 @@ async function tryJoinByInviteCode(code) {
     const j = await r.json();
     if (!r.ok || !j?.ok) return { ok: false, error: j?.error || `http_${r.status}` };
     const room = j.room || {};
-    const ip = String(room?.connect?.ip || '');
-    const port = Number(room?.connect?.port || 19132);
-    if (!ip) return { ok: false, error: 'no_ip' };
-    await shell.openExternal(`minecraft://?addExternalServer=${encodeURIComponent(room.worldName || 'Noc World')}|${ip}:${port}`);
-    // Nudge Bedrock to foreground so user can immediately join from Servers tab.
-    setTimeout(() => { try { shell.openExternal('minecraft://'); } catch (_) {} }, 700);
-    return { ok: true };
+    const routeData = await routeResolveRoom(base, room);
+    if (!routeData?.ok) {
+      // Fallback to direct from room if resolve endpoint unavailable
+      return await openBedrockJoinTarget(room, { route: 'direct', direct: room?.connect || null });
+    }
+    return await openBedrockJoinTarget(room, routeData);
   } catch (e) {
     return { ok: false, error: String(e?.message || e) };
   }
@@ -3562,6 +3591,7 @@ ipcMain.handle('localservers:open', async (_e, payload) => {
     },
     isPrivate: vis !== 'public',
     joinCode: vis === 'code' ? (payload?.joinCode ? String(payload.joinCode) : Math.random().toString(36).slice(2,8).toUpperCase()) : null,
+    transportPolicy: String(payload?.transportPolicy || settings.transportPolicy || 'auto'),
     maxPlayers: Number(payload?.maxPlayers || 10),
     currentPlayers: Number(payload?.currentPlayers ?? (isBedrockRunning() && isBedrockWorldOpen() ? 1 : 0))
   };
@@ -3626,6 +3656,11 @@ ipcMain.handle('localservers:inviteRevoke', async (_e, payload) => {
   const code = String(payload?.code || '').trim().toUpperCase();
   if (!code) return { ok: false, error: 'code_required' };
   return await localServersApi('/invite/revoke', 'POST', { hostId: getLocalServersHostId(), code });
+});
+
+ipcMain.handle('localservers:joinByCodeOpen', async (_e, payload) => {
+  const code = String(payload?.code || '').trim().toUpperCase();
+  return await tryJoinByInviteCode(code);
 });
 
 ipcMain.handle('bedrock:hubOpen', async () => {

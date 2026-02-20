@@ -11,7 +11,8 @@
     "build:win": "electron-builder --win --x64",
     "build:mac": "electron-builder --mac",
     "build:linux": "electron-builder --linux",
-    "registry:start": "node tools/local-servers-registry/server.js"
+    "registry:start": "node tools/local-servers-registry/server.js",
+    "relay:start": "node tools/relay-service/server.js"
   },
   "dependencies": {
     "adm-zip": "^0.5.10",

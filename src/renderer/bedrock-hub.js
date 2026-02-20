@@ -192,14 +192,9 @@
     $('#btnJoinByCode')?.addEventListener('click', async () => {
       const code = String($('#inviteCode')?.value || '').trim().toUpperCase();
       if (!code) { setInviteStatus('Введи код приглашения.'); return; }
-      const r = await window.noc.localServersInviteResolve(code);
-      if (!r?.ok || !r.room) { setInviteStatus(`Код не найден: ${r?.error || 'unknown'}`); return; }
-      const ip = String(r.room?.connect?.ip || '');
-      const port = Number(r.room?.connect?.port || 19132);
-      if (!ip) { setInviteStatus('У хоста нет публичного адреса.'); return; }
-      await window.noc.shellOpenExternal(`minecraft://?addExternalServer=${encodeURIComponent(r.room.worldName || 'Noc World')}|${ip}:${port}`);
-      setTimeout(() => { window.noc.shellOpenExternal('minecraft://').catch(() => {}); }, 700);
-      setInviteStatus(`Сервер добавлен и Bedrock открыт: ${ip}:${port}`);
+      const r = await window.noc.localServersJoinByCodeOpen(code);
+      if (!r?.ok) { setInviteStatus(`Код не найден: ${r?.error || 'unknown'}`); return; }
+      setInviteStatus(streamerMode ? 'Подключение открыто в Bedrock.' : `Подключение открыто (${r.route || 'direct'}): ${r.host || ''}:${r.port || ''}`);
     });
 
     $('#btnCloseWin')?.addEventListener('click', () => window.close());
