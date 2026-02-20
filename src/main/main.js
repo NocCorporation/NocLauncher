@@ -3219,6 +3219,8 @@ let autoLocalWatchTimer = null;
 let autoLocalLastWorldName = '';
 let manualHostWanted = false;
 let localRegistryProc = null;
+let cachedBedrockRunning = false;
+let cachedWorldOpen = false;
 
 function ensureLocalRegistryProcess() {
   try {
@@ -3299,7 +3301,7 @@ function startAutoLocalHeartbeat() {
   autoLocalHeartbeatTimer = setInterval(async () => {
     try {
       const meta = detectBedrockWorldMeta();
-      const currentPlayers = isBedrockRunning() && isBedrockWorldOpen() ? 1 : 0;
+      const currentPlayers = (cachedBedrockRunning && cachedWorldOpen) ? 1 : 0;
       await localServersApi('/world/heartbeat', 'POST', {
         hostId: getLocalServersHostId(),
         roomId: autoLocalRoomId,
@@ -3308,7 +3310,7 @@ function startAutoLocalHeartbeat() {
         currentPlayers
       });
     } catch (_) {}
-  }, 1000);
+  }, 2000);
 }
 
 function ensureAutoLocalHostWatcher() {
@@ -3317,6 +3319,8 @@ function ensureAutoLocalHostWatcher() {
     try {
       const running = isBedrockRunning();
       const worldOpen = isBedrockWorldOpen();
+      cachedBedrockRunning = running;
+      cachedWorldOpen = worldOpen;
       const shouldHost = running && (worldOpen || manualHostWanted);
 
       if (shouldHost && !autoLocalRoomId) {
@@ -3373,7 +3377,7 @@ function ensureAutoLocalHostWatcher() {
         stopAutoLocalHeartbeat();
       }
     } catch (_) {}
-  }, 1000);
+  }, 2500);
 }
 
 ipcMain.handle('localservers:list', async () => {
@@ -3443,14 +3447,14 @@ ipcMain.handle('bedrock:hostStatus', async () => {
   const meta = detectBedrockWorldMeta();
   return {
     ok: true,
-    bedrockRunning: isBedrockRunning(),
-    worldOpen: isBedrockWorldOpen(),
+    bedrockRunning: !!cachedBedrockRunning,
+    worldOpen: !!cachedWorldOpen,
     registryUrl,
     autoHosting: !!autoLocalRoomId,
     manualHostWanted,
     worldName: String(meta.worldName || 'Мой Bedrock мир'),
     maxPlayers: Number(meta.maxPlayers || 10),
-    currentPlayers: (isBedrockRunning() && isBedrockWorldOpen()) ? 1 : 0
+    currentPlayers: (cachedBedrockRunning && cachedWorldOpen) ? 1 : 0
   };
 });
 
