@@ -3240,28 +3240,48 @@ function ensureLocalRegistryProcess() {
   }
 }
 
+function readTextSmart(filePath) {
+  try {
+    const b = fs.readFileSync(filePath);
+    const utf8 = b.toString('utf8').replace(/^\uFEFF/, '').trim();
+    if (utf8) return utf8;
+    const u16 = b.toString('utf16le').replace(/^\uFEFF/, '').trim();
+    if (u16) return u16;
+  } catch (_) {}
+  return '';
+}
+
 function detectBedrockWorldMeta() {
   try {
     const p = bedrockPaths();
     const worldsDir = p?.worlds;
-    if (!worldsDir || !fs.existsSync(worldsDir)) return { worldName: 'Мой Bedrock мир', maxPlayers: 10 };
+    if (!worldsDir || !fs.existsSync(worldsDir)) return { worldName: autoLocalLastWorldName || 'Мой Bedrock мир', maxPlayers: 10 };
     const dirs = fs.readdirSync(worldsDir, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name);
     let best = null;
     let bestM = 0;
+
     for (const d of dirs) {
       const wp = path.join(worldsDir, d);
-      const m = fs.statSync(wp).mtimeMs || 0;
-      if (m > bestM) { bestM = m; best = wp; }
+      let score = 0;
+      try { score = Math.max(score, fs.statSync(wp).mtimeMs || 0); } catch (_) {}
+      const levelNamePath = path.join(wp, 'levelname.txt');
+      const levelDatPath = path.join(wp, 'level.dat');
+      const dbPath = path.join(wp, 'db');
+      try { if (fs.existsSync(levelNamePath)) score = Math.max(score, fs.statSync(levelNamePath).mtimeMs || 0); } catch (_) {}
+      try { if (fs.existsSync(levelDatPath)) score = Math.max(score, fs.statSync(levelDatPath).mtimeMs || 0); } catch (_) {}
+      try { if (fs.existsSync(dbPath)) score = Math.max(score, fs.statSync(dbPath).mtimeMs || 0); } catch (_) {}
+      if (score > bestM) { bestM = score; best = wp; }
     }
-    if (!best) return { worldName: 'Мой Bedrock мир', maxPlayers: 10 };
+
+    if (!best) return { worldName: autoLocalLastWorldName || 'Мой Bedrock мир', maxPlayers: 10 };
+
     const nmPath = path.join(best, 'levelname.txt');
-    let worldName = 'Мой Bedrock мир';
-    try {
-      if (fs.existsSync(nmPath)) worldName = String(fs.readFileSync(nmPath, 'utf8') || '').trim() || worldName;
-    } catch (_) {}
+    let worldName = readTextSmart(nmPath) || autoLocalLastWorldName || 'Мой Bedrock мир';
+    worldName = String(worldName).replace(/[\r\n\t]+/g, ' ').trim().slice(0, 80) || (autoLocalLastWorldName || 'Мой Bedrock мир');
+
     return { worldName, maxPlayers: 10 };
   } catch (_) {
-    return { worldName: 'Мой Bedrock мир', maxPlayers: 10 };
+    return { worldName: autoLocalLastWorldName || 'Мой Bedrock мир', maxPlayers: 10 };
   }
 }
 
@@ -3297,7 +3317,7 @@ function startAutoLocalHeartbeat() {
   autoLocalHeartbeatTimer = setInterval(async () => {
     try {
       const meta = detectBedrockWorldMeta();
-      const currentPlayers = (cachedBedrockRunning && cachedWorldOpen) ? 1 : 0;
+      const currentPlayers = autoLocalRoomId ? 1 : 0;
       await localServersApi('/world/heartbeat', 'POST', {
         hostId: getLocalServersHostId(),
         roomId: autoLocalRoomId,
@@ -3331,7 +3351,7 @@ function ensureAutoLocalHostWatcher() {
           isPrivate: false,
           joinCode: null,
           maxPlayers: Number(meta.maxPlayers || 10),
-          currentPlayers: worldOpen ? 1 : 0
+          currentPlayers: 1
         });
         if (opened?.ok) {
           autoLocalRoomId = opened.roomId || opened.id || null;
@@ -3356,7 +3376,7 @@ function ensureAutoLocalHostWatcher() {
             isPrivate: false,
             joinCode: null,
             maxPlayers: Number(meta.maxPlayers || 10),
-            currentPlayers: worldOpen ? 1 : 0
+            currentPlayers: 1
           });
           if (reopened?.ok) {
             autoLocalRoomId = reopened.roomId || reopened.id || null;
@@ -3450,7 +3470,7 @@ ipcMain.handle('bedrock:hostStatus', async () => {
     manualHostWanted,
     worldName: String(meta.worldName || 'Мой Bedrock мир'),
     maxPlayers: Number(meta.maxPlayers || 10),
-    currentPlayers: (cachedBedrockRunning && cachedWorldOpen) ? 1 : 0
+    currentPlayers: autoLocalRoomId ? 1 : 0
   };
 });
 
