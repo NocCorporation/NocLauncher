@@ -537,7 +537,9 @@ const store = new Store({
     uiLowPower: true,
     closeLauncherOnGameStart: false,
     localServersRegistryUrl: 'http://127.0.0.1:8787',
-    localServersHostId: ''
+    localServersHostId: '',
+    bedrockDataRoot: '',
+    localServersVisibility: 'public'
   }
 });
 
@@ -3402,6 +3404,7 @@ function ensureAutoLocalHostWatcher() {
 
       if (shouldHost && !autoLocalRoomId) {
         const meta = detectBedrockWorldMeta();
+        const vis = String(store.get('localServersVisibility') || 'public');
         const opened = await localServersApi('/world/open', 'POST', {
           hostId: getLocalServersHostId(),
           hostName: String(store.get('lastUsername') || 'Host'),
@@ -3409,8 +3412,8 @@ function ensureAutoLocalHostWatcher() {
           gameVersion: 'bedrock',
           mode: 'survival',
           connect: { type: 'direct', ip: '', port: 19132 },
-          isPrivate: false,
-          joinCode: null,
+          isPrivate: vis !== 'public',
+          joinCode: vis === 'code' ? Math.random().toString(36).slice(2,8).toUpperCase() : null,
           maxPlayers: Number(meta.maxPlayers || 10),
           currentPlayers: 1
         });
@@ -3427,6 +3430,7 @@ function ensureAutoLocalHostWatcher() {
         if (newName && autoLocalLastWorldName && newName !== autoLocalLastWorldName) {
           await localServersApi('/world/close', 'POST', { hostId: getLocalServersHostId(), roomId: autoLocalRoomId });
           autoLocalRoomId = null;
+          const vis = String(store.get('localServersVisibility') || 'public');
           const reopened = await localServersApi('/world/open', 'POST', {
             hostId: getLocalServersHostId(),
             hostName: String(store.get('lastUsername') || 'Host'),
@@ -3434,8 +3438,8 @@ function ensureAutoLocalHostWatcher() {
             gameVersion: 'bedrock',
             mode: 'survival',
             connect: { type: 'direct', ip: '', port: 19132 },
-            isPrivate: false,
-            joinCode: null,
+            isPrivate: vis !== 'public',
+            joinCode: vis === 'code' ? Math.random().toString(36).slice(2,8).toUpperCase() : null,
             maxPlayers: Number(meta.maxPlayers || 10),
             currentPlayers: 1
           });
@@ -3481,6 +3485,7 @@ ipcMain.handle('localservers:open', async (_e, payload) => {
     } catch (_) {}
   }
 
+  const vis = String(payload?.visibility || settings.localServersVisibility || 'public');
   const data = {
     hostId,
     hostName: String(payload?.hostName || settings.lastUsername || 'Host'),
@@ -3492,8 +3497,8 @@ ipcMain.handle('localservers:open', async (_e, payload) => {
       ip,
       port: Number(payload?.connect?.port || 19132)
     },
-    isPrivate: !!payload?.isPrivate,
-    joinCode: payload?.joinCode ? String(payload.joinCode) : null,
+    isPrivate: vis !== 'public',
+    joinCode: vis === 'code' ? (payload?.joinCode ? String(payload.joinCode) : Math.random().toString(36).slice(2,8).toUpperCase()) : null,
     maxPlayers: Number(payload?.maxPlayers || 10),
     currentPlayers: Number(payload?.currentPlayers ?? (isBedrockRunning() && isBedrockWorldOpen() ? 1 : 0))
   };
@@ -3519,6 +3524,18 @@ ipcMain.handle('localservers:hostSetWanted', async (_e, payload) => {
   return { ok: true, enabled: manualHostWanted };
 });
 
+ipcMain.handle('localservers:visibilitySet', async (_e, payload) => {
+  const v = String(payload?.visibility || 'public');
+  const allowed = new Set(['public', 'code']);
+  const vis = allowed.has(v) ? v : 'public';
+  store.set('localServersVisibility', vis);
+  return { ok: true, visibility: vis };
+});
+
+ipcMain.handle('localservers:visibilityGet', async () => {
+  return { ok: true, visibility: String(store.get('localServersVisibility') || 'public') };
+});
+
 ipcMain.handle('localservers:inviteCreate', async () => {
   if (!autoLocalRoomId) return { ok: false, error: 'room_not_open' };
   return await localServersApi('/invite/create', 'POST', {
@@ -3542,6 +3559,12 @@ ipcMain.handle('localservers:inviteResolve', async (_e, payload) => {
   }
 });
 
+ipcMain.handle('localservers:inviteRevoke', async (_e, payload) => {
+  const code = String(payload?.code || '').trim().toUpperCase();
+  if (!code) return { ok: false, error: 'code_required' };
+  return await localServersApi('/invite/revoke', 'POST', { hostId: getLocalServersHostId(), code });
+});
+
 ipcMain.handle('bedrock:hubOpen', async () => {
   ensureAutoLocalHostWatcher();
   return openBedrockHubWindow();
@@ -3560,6 +3583,52 @@ ipcMain.handle('bedrock:hostStatus', async () => {
     worldName: String(meta.worldName || 'Мой Bedrock мир'),
     maxPlayers: Number(meta.maxPlayers || 10),
     currentPlayers: autoLocalRoomId ? 1 : 0
+  };
+});
+
+ipcMain.handle('bedrock:pathInfo', async () => {
+  const p = bedrockPaths();
+  const worlds = p?.worlds;
+  let worldsCount = 0;
+  try { if (worlds && fs.existsSync(worlds)) worldsCount = fs.readdirSync(worlds, { withFileTypes: true }).filter(d => d.isDirectory()).length; } catch (_) {}
+  return {
+    ok: true,
+    comMojang: p?.comMojang || '',
+    worldsPath: worlds || '',
+    source: bedrockComMojangSource,
+    worldsCount
+  };
+});
+
+ipcMain.handle('bedrock:pathSet', async () => {
+  const r = await dialog.showOpenDialog(win, { title: 'Выбери папку com.mojang', properties: ['openDirectory'] });
+  if (r.canceled || !r.filePaths?.[0]) return { ok: false, canceled: true };
+  let picked = String(r.filePaths[0]);
+  if (picked.toLowerCase().endsWith('minecraftworlds')) picked = path.dirname(picked);
+  const worlds = path.join(picked, 'minecraftWorlds');
+  if (!fs.existsSync(worlds)) return { ok: false, error: 'not_com_mojang_folder' };
+  store.set('bedrockDataRoot', picked);
+  bedrockComMojangCache = '';
+  bedrockComMojangCacheTs = 0;
+  return { ok: true, comMojang: picked };
+});
+
+ipcMain.handle('bedrock:connectivity', async () => {
+  const registryUrl = await ensureRegistryUrlAuto();
+  let publicIp = '';
+  try {
+    const r = await fetch('https://api.ipify.org?format=json', { headers: { 'User-Agent': 'NocLauncher/1.0' } });
+    const j = await r.json();
+    publicIp = String(j?.ip || '');
+  } catch (_) {}
+  return {
+    ok: true,
+    registryOk: !!registryUrl,
+    registryUrl,
+    publicIp,
+    bedrockRunning: !!cachedBedrockRunning,
+    worldOpen: !!cachedWorldOpen,
+    hostActive: !!autoLocalRoomId
   };
 });
 
@@ -3845,9 +3914,25 @@ function resolveBedrockPackageDir() {
 
 let bedrockComMojangCache = '';
 let bedrockComMojangCacheTs = 0;
+let bedrockComMojangSource = 'unknown';
 
 function discoverBedrockComMojangDir() {
   const nowTs = Date.now();
+
+  // User override has top priority
+  try {
+    const override = String(store.get('bedrockDataRoot') || '').trim();
+    if (override && fs.existsSync(override)) {
+      const worlds = path.join(override, 'minecraftWorlds');
+      if (fs.existsSync(worlds)) {
+        bedrockComMojangCache = override;
+        bedrockComMojangCacheTs = nowTs;
+        bedrockComMojangSource = 'override';
+        return bedrockComMojangCache;
+      }
+    }
+  } catch (_) {}
+
   if (bedrockComMojangCache && (nowTs - bedrockComMojangCacheTs) < 15000 && fs.existsSync(bedrockComMojangCache)) {
     return bedrockComMojangCache;
   }
@@ -3873,7 +3958,7 @@ function discoverBedrockComMojangDir() {
             const st = fs.statSync(com);
             if (nowTs - (st.mtimeMs || 0) < 7 * 86400000) score += 40;
           } catch (_) {}
-          candidates.push({ com, score, worldsCount, source: 'roaming' });
+          candidates.push({ com, score, worldsCount, source: `roaming:${u}` });
         }
       }
     }
@@ -3910,6 +3995,7 @@ function discoverBedrockComMojangDir() {
   candidates.sort((a, b) => b.score - a.score);
   bedrockComMojangCache = candidates[0].com;
   bedrockComMojangCacheTs = nowTs;
+  bedrockComMojangSource = String(candidates[0].source || 'auto');
   return bedrockComMojangCache;
 }
 

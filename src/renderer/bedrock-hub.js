@@ -1,21 +1,36 @@
 (() => {
   const $ = (s) => document.querySelector(s);
   let hostWanted = false;
+  let visibility = 'public';
 
-  function setHostStatus(t) {
-    const el = $('#hostStatus');
-    if (el) el.textContent = t;
-  }
-  function setInviteStatus(t) {
-    const el = $('#inviteStatus');
-    if (el) el.textContent = t || '';
-  }
+  function setHostStatus(t) { const el = $('#hostStatus'); if (el) el.textContent = t; }
+  function setInviteStatus(t) { const el = $('#inviteStatus'); if (el) el.textContent = t || ''; }
+  function setDiagStatus(t) { const el = $('#diagStatus'); if (el) el.textContent = t || ''; }
 
   function paintHostToggle() {
     const btn = $('#btnHostToggle');
     if (!btn) return;
     btn.textContent = `Хост: ${hostWanted ? 'ON' : 'OFF'}`;
     btn.classList.toggle('acc', hostWanted);
+  }
+
+  function paintVisibility() {
+    const btn = $('#btnVisibility');
+    if (!btn) return;
+    btn.textContent = `Приватность: ${visibility}`;
+  }
+
+  async function refreshDiagnostics() {
+    const [p, c] = await Promise.all([
+      window.noc.bedrockPathInfo().catch(() => null),
+      window.noc.bedrockConnectivity().catch(() => null)
+    ]);
+    const src = p?.source || 'unknown';
+    const worlds = Number(p?.worldsCount || 0);
+    const path = String(p?.comMojang || '').replace(/\\/g, '/');
+    const reg = c?.registryOk ? 'ok' : 'fail';
+    const ip = c?.publicIp || 'n/a';
+    setDiagStatus(`Path[${src}] worlds=${worlds} • registry=${reg} • ip=${ip} • ${path}`);
   }
 
   async function refresh() {
@@ -77,7 +92,7 @@
     if (!s.bedrockRunning) {
       setHostStatus(`Реестр: ${s.registryUrl}. Bedrock не запущен. Нажми «Открыть мир».`);
     } else if (!s.worldOpen && !hostWanted) {
-      setHostStatus(`Реестр: ${s.registryUrl}. Мягкий режим: включи Хост ON или открой мир для сети.`);
+      setHostStatus(`Реестр: ${s.registryUrl}. Открой мир для сети или включи хост.`);
     } else if (s.autoHosting) {
       setHostStatus(`Мир «${s.worldName || 'Bedrock'}» опубликован ✅ Игроки: ${s.currentPlayers || 0}/${s.maxPlayers || 10}`);
     } else {
@@ -86,7 +101,11 @@
   }
 
   async function init() {
-    $('#btnRefresh')?.addEventListener('click', refresh);
+    const vg = await window.noc.localServersVisibilityGet().catch(() => ({ ok:false }));
+    visibility = vg?.ok ? String(vg.visibility || 'public') : 'public';
+    paintVisibility();
+
+    $('#btnRefresh')?.addEventListener('click', async () => { await refresh(); await refreshDiagnostics(); });
     $('#btnOpenWorld')?.addEventListener('click', async () => {
       await window.noc.bedrockLaunch();
       setTimeout(checkBedrockStatus, 1200);
@@ -97,6 +116,18 @@
       paintHostToggle();
       await checkBedrockStatus();
     });
+    $('#btnVisibility')?.addEventListener('click', async () => {
+      visibility = visibility === 'public' ? 'code' : 'public';
+      await window.noc.localServersVisibilitySet(visibility);
+      paintVisibility();
+      setInviteStatus(`Приватность: ${visibility}`);
+    });
+    $('#btnPickBedrockPath')?.addEventListener('click', async () => {
+      const r = await window.noc.bedrockPathSet();
+      setInviteStatus(r?.ok ? 'Путь Bedrock сохранён.' : `Путь не изменён: ${r?.error || 'cancel'}`);
+      await refreshDiagnostics();
+    });
+
     $('#btnShareInvite')?.addEventListener('click', async () => {
       const r = await window.noc.localServersInviteCreate();
       if (!r?.ok) {
@@ -110,6 +141,14 @@
       const inp = $('#inviteCode');
       if (inp) inp.value = code;
     });
+
+    $('#btnRevokeInvite')?.addEventListener('click', async () => {
+      const code = String($('#inviteCode')?.value || '').trim().toUpperCase();
+      if (!code) { setInviteStatus('Введи код для отзыва.'); return; }
+      const r = await window.noc.localServersInviteRevoke(code);
+      setInviteStatus(r?.ok ? 'Инвайт отозван.' : `Не удалось отозвать: ${r?.error || 'unknown'}`);
+    });
+
     $('#btnJoinByCode')?.addEventListener('click', async () => {
       const code = String($('#inviteCode')?.value || '').trim().toUpperCase();
       if (!code) { setInviteStatus('Введи код приглашения.'); return; }
@@ -121,15 +160,18 @@
       await window.noc.shellOpenExternal(`minecraft://?addExternalServer=${encodeURIComponent(r.room.worldName || 'Noc World')}|${ip}:${port}`);
       setInviteStatus(`Подключение открыто: ${ip}:${port}`);
     });
+
     $('#btnCloseWin')?.addEventListener('click', () => window.close());
 
     setInterval(async () => {
       await checkBedrockStatus();
       await refresh();
+      await refreshDiagnostics();
     }, 4000);
 
     await checkBedrockStatus();
     await refresh();
+    await refreshDiagnostics();
   }
 
   init();

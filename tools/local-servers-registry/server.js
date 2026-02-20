@@ -14,6 +14,8 @@ const INVITE_TTL_MS = Number(process.env.INVITE_TTL_MS || 3600000);
 const rooms = new Map();
 /** @type {Map<string, any>} */
 const invites = new Map();
+/** @type {Map<string, number>} */
+const hostLastOpenTs = new Map();
 
 function now() { return Date.now(); }
 function uid() { return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`; }
@@ -133,6 +135,10 @@ const server = http.createServer(async (req, res) => {
       const body = await parseBody(req);
       const roomData = sanitizeRoom(body);
 
+      const lastOpen = hostLastOpenTs.get(roomData.hostId) || 0;
+      if (now() - lastOpen < 1500) return send(res, 429, { ok: false, error: 'open_rate_limited' });
+      hostLastOpenTs.set(roomData.hostId, now());
+
       const hostRooms = [...rooms.values()].filter((r) => r.hostId === roomData.hostId);
       if (hostRooms.length >= MAX_ROOMS_PER_HOST) {
         return send(res, 429, { ok: false, error: 'rooms_limit_reached' });
@@ -250,6 +256,17 @@ const server = http.createServer(async (req, res) => {
       const room = rooms.get(inv.roomId);
       if (!room) return send(res, 404, { ok: false, error: 'room_not_found' });
       return send(res, 200, { ok: true, code, room });
+    }
+
+    if (req.method === 'POST' && path === '/invite/revoke') {
+      const body = await parseBody(req);
+      const hostId = String(body?.hostId || '').trim();
+      const code = String(body?.code || '').trim().toUpperCase();
+      if (!hostId || !code) return send(res, 400, { ok: false, error: 'hostId_code_required' });
+      const inv = invites.get(code);
+      if (!inv || inv.hostId !== hostId) return send(res, 404, { ok: false, error: 'invite_not_found' });
+      invites.delete(code);
+      return send(res, 200, { ok: true });
     }
 
     return send(res, 404, { ok: false, error: 'not_found' });
