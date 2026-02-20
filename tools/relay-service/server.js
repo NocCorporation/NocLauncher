@@ -41,11 +41,18 @@ function parseBody(req){
   });
 }
 
+function dropSession(sessionId){
+  sessions.delete(sessionId);
+  for (const [k, p] of peers.entries()) {
+    if (p.sessionId === sessionId) peers.delete(k);
+  }
+}
+
 function cleanup(){
   const t = now();
   for(const [sid, s] of sessions.entries()){
     if(t - s.lastSeen > SESSION_TTL_MS){
-      sessions.delete(sid);
+      dropSession(sid);
     }
   }
 }
@@ -94,14 +101,18 @@ const api = http.createServer(async (req,res)=>{
       const role = String(b.role || '').trim(); // host|player
       const address = String(b.address || '').trim();
       const port = Number(b.port || 0);
-      if(!sessionId || !role || !address || !port) return send(res,400,{ok:false,error:'session_bind_fields_required'});
+      const tkn = String(b.token || '').trim().toUpperCase();
+      if(!sessionId || !role || !address || !port || !tkn) return send(res,400,{ok:false,error:'session_bind_fields_required'});
       const s = sessions.get(sessionId);
       if(!s) return send(res,404,{ok:false,error:'session_not_found'});
 
+      if (role === 'host' && tkn !== s.hostToken) return send(res,403,{ok:false,error:'invalid_host_token'});
+      if (role === 'player' && tkn !== s.playerToken) return send(res,403,{ok:false,error:'invalid_player_token'});
+      if (role !== 'host' && role !== 'player') return send(res,400,{ok:false,error:'invalid_role'});
+
       const ep = { address, port };
       if(role==='host') s.hostEndpoint = ep;
-      else if(role==='player') s.playerEndpoint = ep;
-      else return send(res,400,{ok:false,error:'invalid_role'});
+      else s.playerEndpoint = ep;
 
       peers.set(`${address}:${port}`, { sessionId, role });
       s.lastSeen = now();
@@ -120,6 +131,25 @@ const api = http.createServer(async (req,res)=>{
         lastSeen:s.lastSeen,
         createdAt:s.createdAt
       }});
+    }
+
+    if(req.method==='POST' && path==='/session/heartbeat'){
+      const b = await parseBody(req);
+      const sid = String(b.sessionId || '').trim();
+      if(!sid) return send(res,400,{ok:false,error:'sessionId_required'});
+      const s = sessions.get(sid);
+      if(!s) return send(res,404,{ok:false,error:'session_not_found'});
+      s.lastSeen = now();
+      return send(res,200,{ok:true});
+    }
+
+    if(req.method==='POST' && path==='/session/close'){
+      const b = await parseBody(req);
+      const sid = String(b.sessionId || '').trim();
+      if(!sid) return send(res,400,{ok:false,error:'sessionId_required'});
+      if(!sessions.has(sid)) return send(res,404,{ok:false,error:'session_not_found'});
+      dropSession(sid);
+      return send(res,200,{ok:true});
     }
 
     return send(res,404,{ok:false,error:'not_found'});

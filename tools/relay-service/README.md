@@ -16,8 +16,10 @@ node tools/relay-service/server.js
 
 ## API
 - `GET /health`
-- `POST /session/create` `{ roomId, publicRelayHost? }`
-- `POST /session/bind` `{ sessionId, role: host|player, address, port }`
+- `POST /session/create` `{ roomId, publicRelayHost? }` -> `{ sessionId, hostToken, playerToken, relay }`
+- `POST /session/bind` `{ sessionId, role: host|player, token, address, port }`
 - `GET /session/status?sessionId=...`
+- `POST /session/heartbeat` `{ sessionId }`
+- `POST /session/close` `{ sessionId }`
 
-This is a foundational relay service to integrate with launcher route selection.
+This is a production-oriented foundation to integrate route selection and relay fallback in launcher.

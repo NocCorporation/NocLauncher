@@ -539,7 +539,8 @@ const store = new Store({
     localServersRegistryUrl: 'http://127.0.0.1:8787',
     localServersHostId: '',
     bedrockDataRoot: '',
-    localServersVisibility: 'public'
+    localServersVisibility: 'public',
+    transportPolicy: 'auto'
   }
 });
 
@@ -3627,6 +3628,18 @@ ipcMain.handle('localservers:visibilitySet', async (_e, payload) => {
 
 ipcMain.handle('localservers:visibilityGet', async () => {
   return { ok: true, visibility: String(store.get('localServersVisibility') || 'public') };
+});
+
+ipcMain.handle('localservers:transportSet', async (_e, payload) => {
+  const v = String(payload?.transport || 'auto');
+  const allowed = new Set(['auto', 'direct-only', 'relay-preferred']);
+  const transport = allowed.has(v) ? v : 'auto';
+  store.set('transportPolicy', transport);
+  return { ok: true, transport };
+});
+
+ipcMain.handle('localservers:transportGet', async () => {
+  return { ok: true, transport: String(store.get('transportPolicy') || 'auto') };
 });
 
 ipcMain.handle('localservers:inviteCreate', async () => {

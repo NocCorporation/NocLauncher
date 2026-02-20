@@ -2,6 +2,7 @@
   const $ = (s) => document.querySelector(s);
   let hostWanted = false;
   let visibility = 'public';
+  let transport = 'auto';
   let streamerMode = false;
 
   function setHostStatus(t) { const el = $('#hostStatus'); if (el) el.textContent = t; }
@@ -28,6 +29,12 @@
     btn.classList.toggle('acc', streamerMode);
     const inp = $('#inviteCode');
     if (inp) inp.type = streamerMode ? 'password' : 'text';
+  }
+
+  function paintTransport() {
+    const btn = $('#btnTransport');
+    if (!btn) return;
+    btn.textContent = `Транспорт: ${transport}`;
   }
 
   async function refreshDiagnostics() {
@@ -126,6 +133,10 @@
     visibility = vg?.ok ? String(vg.visibility || 'public') : 'public';
     paintVisibility();
 
+    const tg = await window.noc.localServersTransportGet().catch(() => ({ ok:false }));
+    transport = tg?.ok ? String(tg.transport || 'auto') : 'auto';
+    paintTransport();
+
     try {
       const st = await window.noc.settingsGet();
       streamerMode = !!st?.streamerMode;
@@ -148,6 +159,14 @@
       await window.noc.localServersVisibilitySet(visibility);
       paintVisibility();
       setInviteStatus(`Приватность: ${visibility}`);
+    });
+
+    $('#btnTransport')?.addEventListener('click', async () => {
+      transport = transport === 'auto' ? 'relay-preferred' : (transport === 'relay-preferred' ? 'direct-only' : 'auto');
+      const r = await window.noc.localServersTransportSet(transport);
+      transport = r?.ok ? String(r.transport || transport) : transport;
+      paintTransport();
+      setInviteStatus(`Транспорт: ${transport}`);
     });
     $('#btnPickBedrockPath')?.addEventListener('click', async () => {
       const r = await window.noc.bedrockPathSet();
