@@ -560,6 +560,7 @@ let catalogWinModrinth = null;
 let catalogWinCurseforge = null;
 
 let splashWin = null;
+let bedrockHubWin = null;
 let launcherClient = null;
 let pendingAuth = null;
 let pendingAuthId = null;
@@ -787,6 +788,38 @@ function openWebWindow(key, url, title = 'Catalog') {
   }
 }
 
+function openBedrockHubWindow() {
+  try {
+    if (bedrockHubWin && !bedrockHubWin.isDestroyed()) {
+      bedrockHubWin.show();
+      bedrockHubWin.focus();
+      return { ok: true, reused: true };
+    }
+
+    bedrockHubWin = new BrowserWindow({
+      width: 1060,
+      height: 700,
+      minWidth: 920,
+      minHeight: 620,
+      title: 'NocLauncher — Локальные сервера',
+      autoHideMenuBar: true,
+      backgroundColor: '#0b0712',
+      icon: path.join(ASSETS_DIR, 'icon.png'),
+      webPreferences: {
+        contextIsolation: true,
+        nodeIntegration: false,
+        preload: PRELOAD_PATH
+      }
+    });
+
+    bedrockHubWin.on('closed', () => { bedrockHubWin = null; });
+    bedrockHubWin.loadFile(path.join(RENDERER_DIR, 'bedrock-hub.html'));
+    return { ok: true, reused: false };
+  } catch (e) {
+    return { ok: false, error: String(e?.message || e) };
+  }
+}
+
 function hideLauncherForGame() {
   try {
     if (win && !win.isDestroyed()) win.hide();
@@ -820,6 +853,16 @@ function isBedrockRunning() {
   } catch (_) {}
 
   return false;
+}
+
+function isBedrockWorldOpen() {
+  try {
+    const out = execFileSync('netstat', ['-ano', '-p', 'udp'], { stdio: ['ignore', 'pipe', 'ignore'] }).toString();
+    // Bedrock world hosting usually binds UDP 19132 (or sometimes 19133)
+    return /:19132\s|:19133\s/.test(out);
+  } catch (_) {
+    return false;
+  }
 }
 
 function watchBedrockAndRestore() {
@@ -3101,6 +3144,16 @@ ipcMain.handle('localservers:list', async () => {
 ipcMain.handle('localservers:open', async (_e, payload) => {
   const hostId = getLocalServersHostId();
   const settings = store.store || {};
+
+  let ip = String(payload?.connect?.ip || '').trim();
+  if (!ip) {
+    try {
+      const r = await fetch('https://api.ipify.org?format=json', { headers: { 'User-Agent': 'NocLauncher/1.0' } });
+      const j = await r.json();
+      ip = String(j?.ip || '').trim();
+    } catch (_) {}
+  }
+
   const data = {
     hostId,
     hostName: String(payload?.hostName || settings.lastUsername || 'Host'),
@@ -3109,7 +3162,7 @@ ipcMain.handle('localservers:open', async (_e, payload) => {
     mode: String(payload?.mode || 'survival'),
     connect: {
       type: String(payload?.connect?.type || 'direct'),
-      ip: String(payload?.connect?.ip || ''),
+      ip,
       port: Number(payload?.connect?.port || 19132)
     },
     isPrivate: !!payload?.isPrivate,
@@ -3131,6 +3184,18 @@ ipcMain.handle('localservers:close', async (_e, payload) => {
 
 ipcMain.handle('localservers:joinByCode', async (_e, payload) => {
   return await localServersApi('/world/join-by-code', 'POST', { joinCode: String(payload?.joinCode || '') });
+});
+
+ipcMain.handle('bedrock:hubOpen', async () => {
+  return openBedrockHubWindow();
+});
+
+ipcMain.handle('bedrock:hostStatus', async () => {
+  return {
+    ok: true,
+    bedrockRunning: isBedrockRunning(),
+    worldOpen: isBedrockWorldOpen()
+  };
 });
 
 ipcMain.handle('shell:openExternal', async (_e, payload) => {
@@ -3558,6 +3623,8 @@ ipcMain.handle('bedrock:launch', async () => {
     hideLauncherForGame();
     await shell.openExternal('minecraft://');
     watchBedrockAndRestore();
+    // Show Omlet-like local servers hub window alongside Bedrock session
+    setTimeout(() => { try { openBedrockHubWindow(); } catch (_) {} }, 900);
     return { ok: true };
   } catch (e) {
     restoreLauncherAfterGame();

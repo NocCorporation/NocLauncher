@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NocLauncher — Локальные сервера</title>
+  <style>
+    :root{
+      --bg:#090612; --card:#151327; --stroke:rgba(255,255,255,.12); --muted:rgba(255,255,255,.65);
+      --txt:#fff; --acc:#6dff9a; --acc2:#9b7bff;
+    }
+    *{box-sizing:border-box} body{margin:0;font-family:Segoe UI,Inter,Arial;background:radial-gradient(1200px 600px at 20% -10%,#22173d 0%,var(--bg) 60%);color:var(--txt)}
+    .wrap{max-width:1080px;margin:0 auto;padding:18px}
+    .top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+    .brand{font-size:24px;font-weight:900}
+    .sub{color:var(--muted);font-size:13px}
+    .grid{display:grid;grid-template-columns:340px 1fr;gap:12px}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));border:1px solid var(--stroke);border-radius:16px;padding:14px}
+    .ttl{font-weight:900;margin-bottom:10px}
+    .row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+    input{width:100%;background:#0f0d1d;color:#fff;border:1px solid var(--stroke);border-radius:10px;padding:10px}
+    .btn{border:0;border-radius:10px;padding:9px 12px;font-weight:800;cursor:pointer;background:#2a2345;color:#fff}
+    .btn.acc{background:linear-gradient(135deg,#63ef94,#4ad77d);color:#0b2818}
+    .btn.ghost{background:#1a1630}
+    .hint{font-size:12px;color:var(--muted)}
+    .list{max-height:520px;overflow:auto;padding-right:4px}
+    .item{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;background:rgba(255,255,255,.03);border:1px solid var(--stroke);border-radius:12px;padding:10px;margin-bottom:8px}
+    .name{font-weight:900}
+    .meta{font-size:12px;color:var(--muted);margin-top:2px}
+    .pill{display:inline-block;padding:2px 8px;border-radius:999px;background:rgba(109,255,154,.14);color:#8fffb5;font-size:11px;margin-left:6px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <div class="brand">NocLauncher • Локальные сервера</div>
+        <div class="sub">Omlet-style меню в стиле Noc: хост мира + лента активных серверов</div>
+      </div>
+      <button class="btn" id="btnRefresh">Обновить ленту</button>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="ttl">Твой хост</div>
+        <div class="row"><input id="registryUrl" placeholder="URL реестра (например http://IP:8787)"/></div>
+        <div class="row"><button class="btn" id="btnSaveRegistry">Сохранить URL</button></div>
+        <div class="row"><input id="worldName" placeholder="Название мира"/></div>
+        <div class="row"><input id="worldPort" placeholder="Порт (19132)" value="19132"/></div>
+        <div class="row">
+          <button class="btn acc" id="btnOpen">Открыть хост</button>
+          <button class="btn ghost" id="btnClose">Закрыть</button>
+        </div>
+        <div class="hint" id="hostStatus">Проверка Bedrock...</div>
+        <div class="row"><button class="btn ghost" id="btnOpenMinecraft">Открыть Bedrock</button></div>
+        <div class="hint">Если мир не открыт, хост не поднимется. Сначала зайди в обычный мир Bedrock.</div>
+      </div>
+
+      <div class="card">
+        <div class="ttl">Лента серверов игроков</div>
+        <div class="list" id="servers"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./bedrock-hub.js"></script>
+</body>
+</html>

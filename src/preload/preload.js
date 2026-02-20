@@ -68,6 +68,8 @@ modsList: () => ipcRenderer.invoke('mods:list'),
 
   bedrockCheck: () => ipcRenderer.invoke('bedrock:check'),
   bedrockLaunch: () => ipcRenderer.invoke('bedrock:launch'),
+  bedrockHubOpen: () => ipcRenderer.invoke('bedrock:hubOpen'),
+  bedrockHostStatus: () => ipcRenderer.invoke('bedrock:hostStatus'),
   bedrockOpenStore: () => ipcRenderer.invoke('bedrock:openStore'),
   bedrockManagerStatus: () => ipcRenderer.invoke('bedrock:managerStatus'),
   bedrockManagerSetup: () => ipcRenderer.invoke('bedrock:managerSetup'),
