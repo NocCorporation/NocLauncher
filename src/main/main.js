@@ -3398,7 +3398,7 @@ function ensureAutoLocalHostWatcher() {
       const worldOpen = isBedrockWorldOpen();
       cachedBedrockRunning = running;
       cachedWorldOpen = worldOpen;
-      const shouldHost = running && (worldOpen || manualHostWanted);
+      const shouldHost = running && worldOpen;
 
       if (shouldHost && !autoLocalRoomId) {
         const meta = detectBedrockWorldMeta();
@@ -3451,7 +3451,12 @@ function ensureAutoLocalHostWatcher() {
         await localServersApi('/world/close', 'POST', { hostId: getLocalServersHostId(), roomId: autoLocalRoomId });
         autoLocalRoomId = null;
         autoLocalLastWorldName = '';
+        manualHostWanted = false;
         stopAutoLocalHeartbeat();
+      }
+
+      if ((!running || !worldOpen) && manualHostWanted) {
+        manualHostWanted = false;
       }
     } catch (_) {}
   }, 4000);
