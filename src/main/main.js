@@ -3217,6 +3217,7 @@ let autoLocalRoomId = null;
 let autoLocalHeartbeatTimer = null;
 let autoLocalWatchTimer = null;
 let autoLocalLastWorldName = '';
+let manualHostWanted = false;
 let localRegistryProc = null;
 
 function ensureLocalRegistryProcess() {
@@ -3296,7 +3297,17 @@ function stopAutoLocalHeartbeat() {
 function startAutoLocalHeartbeat() {
   stopAutoLocalHeartbeat();
   autoLocalHeartbeatTimer = setInterval(async () => {
-    try { await localServersApi('/world/heartbeat', 'POST', { hostId: getLocalServersHostId(), roomId: autoLocalRoomId }); } catch (_) {}
+    try {
+      const meta = detectBedrockWorldMeta();
+      const currentPlayers = isBedrockRunning() && isBedrockWorldOpen() ? 1 : 0;
+      await localServersApi('/world/heartbeat', 'POST', {
+        hostId: getLocalServersHostId(),
+        roomId: autoLocalRoomId,
+        worldName: String(meta.worldName || 'Мой Bedrock мир'),
+        maxPlayers: Number(meta.maxPlayers || 10),
+        currentPlayers
+      });
+    } catch (_) {}
   }, 1000);
 }
 
@@ -3306,8 +3317,9 @@ function ensureAutoLocalHostWatcher() {
     try {
       const running = isBedrockRunning();
       const worldOpen = isBedrockWorldOpen();
+      const shouldHost = running && (worldOpen || manualHostWanted);
 
-      if (running && worldOpen && !autoLocalRoomId) {
+      if (shouldHost && !autoLocalRoomId) {
         const meta = detectBedrockWorldMeta();
         const opened = await localServersApi('/world/open', 'POST', {
           hostId: getLocalServersHostId(),
@@ -3318,7 +3330,8 @@ function ensureAutoLocalHostWatcher() {
           connect: { type: 'direct', ip: '', port: 19132 },
           isPrivate: false,
           joinCode: null,
-          maxPlayers: Number(meta.maxPlayers || 10)
+          maxPlayers: Number(meta.maxPlayers || 10),
+          currentPlayers: worldOpen ? 1 : 0
         });
         if (opened?.ok) {
           autoLocalRoomId = opened.roomId || opened.id || null;
@@ -3327,7 +3340,7 @@ function ensureAutoLocalHostWatcher() {
         }
       }
 
-      if (running && worldOpen && autoLocalRoomId) {
+      if (shouldHost && autoLocalRoomId) {
         const meta = detectBedrockWorldMeta();
         const newName = String(meta.worldName || '');
         if (newName && autoLocalLastWorldName && newName !== autoLocalLastWorldName) {
@@ -3342,7 +3355,8 @@ function ensureAutoLocalHostWatcher() {
             connect: { type: 'direct', ip: '', port: 19132 },
             isPrivate: false,
             joinCode: null,
-            maxPlayers: Number(meta.maxPlayers || 10)
+            maxPlayers: Number(meta.maxPlayers || 10),
+            currentPlayers: worldOpen ? 1 : 0
           });
           if (reopened?.ok) {
             autoLocalRoomId = reopened.roomId || reopened.id || null;
@@ -3352,7 +3366,7 @@ function ensureAutoLocalHostWatcher() {
         }
       }
 
-      if ((!running || !worldOpen) && autoLocalRoomId) {
+      if ((!running || !shouldHost) && autoLocalRoomId) {
         await localServersApi('/world/close', 'POST', { hostId: getLocalServersHostId(), roomId: autoLocalRoomId });
         autoLocalRoomId = null;
         autoLocalLastWorldName = '';
@@ -3394,7 +3408,8 @@ ipcMain.handle('localservers:open', async (_e, payload) => {
     },
     isPrivate: !!payload?.isPrivate,
     joinCode: payload?.joinCode ? String(payload.joinCode) : null,
-    maxPlayers: Number(payload?.maxPlayers || 10)
+    maxPlayers: Number(payload?.maxPlayers || 10),
+    currentPlayers: Number(payload?.currentPlayers ?? (isBedrockRunning() && isBedrockWorldOpen() ? 1 : 0))
   };
   return await localServersApi('/world/open', 'POST', data);
 });
@@ -3413,6 +3428,11 @@ ipcMain.handle('localservers:joinByCode', async (_e, payload) => {
   return await localServersApi('/world/join-by-code', 'POST', { joinCode: String(payload?.joinCode || '') });
 });
 
+ipcMain.handle('localservers:hostSetWanted', async (_e, payload) => {
+  manualHostWanted = !!payload?.enabled;
+  return { ok: true, enabled: manualHostWanted };
+});
+
 ipcMain.handle('bedrock:hubOpen', async () => {
   ensureAutoLocalHostWatcher();
   return openBedrockHubWindow();
@@ -3427,8 +3447,10 @@ ipcMain.handle('bedrock:hostStatus', async () => {
     worldOpen: isBedrockWorldOpen(),
     registryUrl,
     autoHosting: !!autoLocalRoomId,
+    manualHostWanted,
     worldName: String(meta.worldName || 'Мой Bedrock мир'),
-    maxPlayers: Number(meta.maxPlayers || 10)
+    maxPlayers: Number(meta.maxPlayers || 10),
+    currentPlayers: (isBedrockRunning() && isBedrockWorldOpen()) ? 1 : 0
   };
 });
 

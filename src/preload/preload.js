@@ -135,6 +135,7 @@ modsList: () => ipcRenderer.invoke('mods:list'),
   localServersClose: (payload) => ipcRenderer.invoke('localservers:close', payload),
   localServersHeartbeat: (payload) => ipcRenderer.invoke('localservers:heartbeat', payload),
   localServersJoinByCode: (payload) => ipcRenderer.invoke('localservers:joinByCode', payload),
+  localServersHostSetWanted: (enabled) => ipcRenderer.invoke('localservers:hostSetWanted', { enabled }),
 
   onLog: (cb) => ipcRenderer.on('log', (_e, d) => cb(d)),
   onDownload: (cb) => ipcRenderer.on('download', (_e, d) => cb(d)),

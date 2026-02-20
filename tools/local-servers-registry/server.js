@@ -62,6 +62,7 @@ function sanitizeRoom(input) {
   const isPrivate = !!input?.isPrivate;
   const joinCode = input?.joinCode ? String(input.joinCode).trim().slice(0, 64) : null;
   const maxPlayers = Math.max(1, Math.min(100, Number(input?.maxPlayers || 10)));
+  const currentPlayers = Math.max(0, Math.min(maxPlayers, Number(input?.currentPlayers ?? 1)));
 
   return {
     hostId,
@@ -72,7 +73,8 @@ function sanitizeRoom(input) {
     connect: { type: connectType, ip, port },
     isPrivate,
     joinCode,
-    maxPlayers
+    maxPlayers,
+    currentPlayers
   };
 }
 
@@ -90,6 +92,7 @@ function activeRoomList() {
       connect: r.connect,
       isPrivate: r.isPrivate,
       maxPlayers: r.maxPlayers,
+      currentPlayers: r.currentPlayers,
       createdAt: r.createdAt,
       lastHeartbeatAt: r.lastHeartbeatAt
     }));
@@ -138,17 +141,27 @@ const server = http.createServer(async (req, res) => {
       const roomId = String(body?.roomId || '').trim();
       if (!hostId) return send(res, 400, { ok: false, error: 'hostId_required' });
 
+      const worldName = body?.worldName ? String(body.worldName).trim().slice(0, 80) : null;
+      const currentPlayersRaw = body?.currentPlayers;
+      const maxPlayersRaw = body?.maxPlayers;
+
       let updated = 0;
       if (roomId && rooms.has(roomId)) {
         const room = rooms.get(roomId);
         if (room.hostId === hostId) {
           room.lastHeartbeatAt = now();
+          if (worldName) room.worldName = worldName;
+          if (Number.isFinite(Number(maxPlayersRaw))) room.maxPlayers = Math.max(1, Math.min(100, Number(maxPlayersRaw)));
+          if (Number.isFinite(Number(currentPlayersRaw))) room.currentPlayers = Math.max(0, Math.min(room.maxPlayers || 100, Number(currentPlayersRaw)));
           updated = 1;
         }
       } else {
         for (const room of rooms.values()) {
           if (room.hostId === hostId) {
             room.lastHeartbeatAt = now();
+            if (worldName) room.worldName = worldName;
+            if (Number.isFinite(Number(maxPlayersRaw))) room.maxPlayers = Math.max(1, Math.min(100, Number(maxPlayersRaw)));
+            if (Number.isFinite(Number(currentPlayersRaw))) room.currentPlayers = Math.max(0, Math.min(room.maxPlayers || 100, Number(currentPlayersRaw)));
             updated++;
           }
         }
