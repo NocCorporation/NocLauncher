@@ -836,6 +836,15 @@ function openBedrockHubWindow() {
   }
 }
 
+function closeBedrockHubWindow() {
+  try {
+    if (bedrockHubWin && !bedrockHubWin.isDestroyed()) {
+      bedrockHubWin.close();
+      bedrockHubWin = null;
+    }
+  } catch (_) {}
+}
+
 function hideLauncherForGame() {
   try {
     if (win && !win.isDestroyed()) win.hide();
@@ -933,6 +942,7 @@ function watchBedrockAndRestore() {
       const elapsed = Date.now() - startedAt;
       if (seenRunning && !running) {
         clearInterval(timer);
+        closeBedrockHubWindow();
         restoreLauncherAfterGame();
         return;
       }
@@ -940,16 +950,19 @@ function watchBedrockAndRestore() {
       // If process never appeared, return launcher back
       if (!seenRunning && elapsed > maxWaitToAppearMs) {
         clearInterval(timer);
+        closeBedrockHubWindow();
         restoreLauncherAfterGame();
         return;
       }
 
       if (elapsed > hardStopMs) {
         clearInterval(timer);
+        closeBedrockHubWindow();
         restoreLauncherAfterGame();
       }
     } catch (_) {
       clearInterval(timer);
+      closeBedrockHubWindow();
       restoreLauncherAfterGame();
     }
   }, 2000);
