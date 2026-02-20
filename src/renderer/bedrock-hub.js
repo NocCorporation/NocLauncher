@@ -10,8 +10,8 @@
   function paintHostToggle() {
     const btn = $('#btnHostToggle');
     if (!btn) return;
-    btn.textContent = `Хост: ${hostWanted ? 'ON' : 'OFF'}`;
-    btn.classList.toggle('acc', hostWanted);
+    btn.textContent = hostWanted ? 'ХОСТИНГ МИРА: ON' : 'ХОСТИНГ МИРА: OFF';
+    btn.classList.add('acc');
   }
 
   function paintVisibility() {
@@ -50,20 +50,27 @@
     }
 
     root.innerHTML = list.map((s, i) => {
-      const name = String(s.worldName || `Server #${i + 1}`);
+      const name = String(s.worldName || `Мой мир #${i + 1}`);
       const host = String(s.hostName || 'unknown');
       const ip = String(s.connect?.ip || '');
       const port = Number(s.connect?.port || 19132);
       const ver = String(s.gameVersion || 'bedrock');
+      const mode = String(s.mode || 'survival');
       const maxPlayers = Number(s.maxPlayers || 10);
       const currentPlayers = Number(s.currentPlayers || 0);
       const disabled = !ip;
+      const ava = host ? host.slice(0,1).toUpperCase() : 'H';
       return `<div class="item">
+        <div class="ava">${ava}</div>
         <div>
-          <div class="name">${name}<span class="badge">ONLINE</span></div>
-          <div class="meta">Host: ${host} • ${ip ? `${ip}:${port}` : 'адрес скрыт'} • v${ver} • ${currentPlayers}/${maxPlayers}</div>
+          <div class="name">${name}</div>
+          <div class="host">ХОСТ: ${host}</div>
         </div>
-        <button class="btn ${disabled ? '' : 'acc'}" data-ip="${ip}" data-port="${port}" ${disabled ? 'disabled' : ''}>Присоединиться</button>
+        <div>
+          <div class="count">${currentPlayers}/${maxPlayers}</div>
+          <div class="meta">${mode} • ${ver}</div>
+        </div>
+        <button class="join" data-ip="${ip}" data-port="${port}" ${disabled ? 'disabled' : ''}>ВСТУПИТЬ</button>
       </div>`;
     }).join('');
 

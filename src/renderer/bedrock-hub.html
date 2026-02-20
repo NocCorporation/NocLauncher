@@ -5,42 +5,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NocLauncher — Локальные сервера</title>
   <style>
-    :root{--txt:#fff;--muted:rgba(255,255,255,.78);--stroke:rgba(255,153,51,.45);--acc:#ff8f2a;--bg1:rgba(56,56,56,.88);--bg2:rgba(74,74,74,.88)}
+    :root{--bg:#232a42;--card:#2a314c;--line:rgba(255,255,255,.08);--txt:#fff;--muted:#b9c0d6;--green:#64cc3d}
     *{box-sizing:border-box}
-    body{margin:0;color:var(--txt);font-family:Segoe UI,Inter,Arial;background:transparent}
+    body{margin:0;background:transparent;color:var(--txt);font-family:Segoe UI,Inter,Arial}
     .wrap{padding:8px}
-    .shell{background:linear-gradient(180deg,var(--bg2),var(--bg1));border:1px solid var(--stroke);border-radius:14px;padding:10px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
-    .curtain{display:block;background:linear-gradient(90deg,rgba(255,122,20,.95),rgba(255,163,77,.95));color:#2d1300;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:900;letter-spacing:.2px;margin-bottom:7px}
-    .curtain.bottom{margin-top:6px;margin-bottom:0}
-    .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-    .title{font-weight:900;font-size:16px}
-    .miniIcons{display:flex;gap:6px;margin-bottom:7px}
-    .miniIco{width:28px;height:28px;border-radius:999px;display:grid;place-items:center;background:rgba(255,255,255,.1);border:1px solid rgba(255,153,51,.35);font-size:13px}
-    .btn{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;border-radius:10px;padding:6px 9px;font-weight:800;cursor:pointer}
-    .btn.acc{background:linear-gradient(135deg,#ff7f1f,#ff9d46);color:#2f1600;border:0}
-    .hint{font-size:12px;color:var(--muted);margin-bottom:7px}
-    .row{display:flex;gap:7px;margin-bottom:8px}
-    .list{max-height:300px;overflow:auto}
-    .item{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,153,51,.32);border-radius:10px;padding:8px;margin-bottom:6px}
-    .name{font-weight:800;font-size:14px}
-    .meta{font-size:12px;color:var(--muted)}
-    .badge{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:999px;background:rgba(255,143,42,.22);border:1px solid rgba(255,153,51,.5);color:#ffbf8a;font-size:10px;font-weight:900;vertical-align:middle}
+    .shell{background:var(--bg);border:1px solid rgba(0,0,0,.25);border-radius:14px;padding:10px;box-shadow:0 8px 28px rgba(0,0,0,.35)}
+
+    .hero{display:grid;grid-template-columns:52px 1fr auto;gap:10px;align-items:center;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:12px;padding:8px}
+    .mcIcon{width:52px;height:52px;border-radius:10px;background:linear-gradient(180deg,#7ad35a,#4ca93a);display:grid;place-items:center;font-weight:900;color:#17340f}
+    .heroT{font-weight:900;font-size:17px}
+    .heroS{font-size:13px;color:var(--muted)}
+
+    .btn{border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:#fff;border-radius:10px;padding:7px 10px;font-weight:800;cursor:pointer}
+    .btn.acc{background:var(--green);color:#133b0b;border:0}
+
+    .row{display:flex;gap:7px;margin-top:8px}
+    .hint{font-size:12px;color:var(--muted);margin-top:6px}
+
+    .list{margin-top:8px;max-height:320px;overflow:auto;border-top:1px solid var(--line)}
+    .item{display:grid;grid-template-columns:44px 1fr auto auto;gap:10px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--line)}
+    .ava{width:44px;height:44px;border-radius:999px;background:linear-gradient(135deg,#6f8cff,#8f5cff);display:grid;place-items:center;font-weight:900}
+    .name{font-weight:900;font-size:19px;line-height:1}
+    .host{font-size:13px;color:var(--muted);margin-top:4px}
+    .count{font-size:22px;color:var(--green);font-weight:900;text-align:right;min-width:64px}
+    .meta{font-size:12px;color:var(--muted);text-align:right;margin-top:4px}
+
+    .join{background:var(--green);color:#133b0b;border:0;border-radius:9px;padding:10px 12px;font-weight:900;cursor:pointer}
+    .join:disabled{opacity:.5}
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="shell">
-      <div class="curtain">MULTIPLAYER HUB • NOC ARCADE STYLE</div>
-      <div class="miniIcons" aria-hidden="true">
-        <span class="miniIco">⚙️</span><span class="miniIco">🎥</span><span class="miniIco">👥</span><span class="miniIco">🌐</span><span class="miniIco">🕹️</span>
+      <div class="hero">
+        <div class="mcIcon">MC</div>
+        <div>
+          <div class="heroT">Minecraft</div>
+          <div class="heroS">Многопользовательское лобби</div>
+        </div>
+        <button class="btn acc" id="btnHostToggle">ХОСТИНГ МИРА</button>
       </div>
-      <div class="top">
-        <div class="title">Noc • Мультиплеер Bedrock</div>
-        <button class="btn" id="btnCloseWin">✕</button>
-      </div>
-      <div class="hint" id="hostStatus">Проверка Bedrock...</div>
+
       <div class="row">
-        <button class="btn acc" id="btnHostToggle">Хост: OFF</button>
         <button class="btn" id="btnOpenWorld">Открыть мир</button>
         <button class="btn" id="btnShareInvite">Поделиться</button>
         <button class="btn" id="btnRefresh">Обновить</button>
@@ -50,14 +56,18 @@
         <button class="btn" id="btnPickBedrockPath">Путь Bedrock</button>
       </div>
       <div class="row">
-        <input id="inviteCode" placeholder="Код приглашения (например ABCD12)" style="flex:1;background:rgba(255,255,255,.08);border:1px solid var(--stroke);border-radius:10px;color:#fff;padding:6px 8px;" />
+        <input id="inviteCode" placeholder="Код приглашения" style="flex:1;background:rgba(255,255,255,.08);border:1px solid var(--line);border-radius:10px;color:#fff;padding:7px 8px;" />
         <button class="btn" id="btnJoinByCode">Войти по коду</button>
         <button class="btn" id="btnRevokeInvite">Отозвать</button>
       </div>
+
+      <div class="hint" id="hostStatus"></div>
       <div class="hint" id="inviteStatus"></div>
       <div class="hint" id="diagStatus"></div>
       <div class="list" id="servers"></div>
-      <div class="curtain bottom">HOST SWITCH • ORANGE STATUS • LIVE FEED</div>
+
+      <div class="row"><button class="btn acc" style="width:100%">СМОТРЕТЬ БОЛЬШЕ</button></div>
+      <button class="btn" id="btnCloseWin" style="position:absolute;left:-9999px">✕</button>
     </div>
   </div>
   <script src="./bedrock-hub.js"></script>
