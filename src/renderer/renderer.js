@@ -3283,31 +3283,62 @@ function renderBedrockOptionsList() {
     const row = document.createElement('div');
     row.className = 'item mcItem';
     const desc = BEDROCK_OPTION_DESCRIPTIONS[it.key] || it.comment || 'Параметр Bedrock options.txt';
-    row.innerHTML = `
-      <div class="mcItemLeft">
-        <div class="mcVer mono" style="font-size:14px;">${escapeHtml(it.key)}</div>
-        <div class="mcSub">${escapeHtml(desc)}</div>
-      </div>
-      <div class="mcItemRight" style="gap:8px;">
-        <input class="inputMini mono" style="width:180px;" value="${escapeHtml(String(it.value ?? ''))}" data-br-opt="${escapeHtml(it.key)}" />
-        <button class="mcPickBtn" data-br-save="${escapeHtml(it.key)}">Сохранить</button>
-      </div>`;
-    const inp = row.querySelector('input[data-br-opt]');
-    const btn = row.querySelector('button[data-br-save]');
-    const save = async () => {
-      const v = String(inp?.value ?? '');
-      const r = await window.noc?.bedrockOptionsSet?.(it.key, v);
-      if (r?.ok) {
-        setStatus('Bedrock: настройки сохранены');
-        // refresh cached value locally
-        const idx = (state.bedrockOptions || []).findIndex(x => x.key === it.key);
-        if (idx >= 0) state.bedrockOptions[idx].value = v;
-      } else if (r?.error && r.error !== 'cancel') {
-        setStatus(`Bedrock: ошибка сохранения — ${r.error}`);
-      }
-    };
-    btn?.addEventListener('click', save);
-    inp?.addEventListener('keydown', (e) => { if (e.key === 'Enter') save(); });
+    const rawVal = String(it.value ?? '').trim().toLowerCase();
+    const isBool = ['0', '1', 'true', 'false'].includes(rawVal);
+
+    if (isBool) {
+      const isOn = (rawVal === '1' || rawVal === 'true');
+      row.innerHTML = `
+        <div class="mcItemLeft">
+          <div class="mcVer mono" style="font-size:14px;">${escapeHtml(it.key)}</div>
+          <div class="mcSub">${escapeHtml(desc)}</div>
+        </div>
+        <div class="mcItemRight" style="gap:8px; align-items:center;">
+          <button class="mcPickBtn" data-br-toggle="${escapeHtml(it.key)}" style="min-width:96px;">${isOn ? 'ВКЛ' : 'ВЫКЛ'}</button>
+        </div>`;
+
+      const tgl = row.querySelector('button[data-br-toggle]');
+      tgl?.addEventListener('click', async () => {
+        const curr = String(it.value ?? '').trim().toLowerCase();
+        const on = (curr === '1' || curr === 'true');
+        const next = on ? '0' : '1';
+        const r = await window.noc?.bedrockOptionsSet?.(it.key, next);
+        if (r?.ok) {
+          const idx = (state.bedrockOptions || []).findIndex(x => x.key === it.key);
+          if (idx >= 0) state.bedrockOptions[idx].value = next;
+          tgl.textContent = next === '1' ? 'ВКЛ' : 'ВЫКЛ';
+          setStatus('Bedrock: настройки сохранены');
+        } else if (r?.error && r.error !== 'cancel') {
+          setStatus(`Bedrock: ошибка сохранения — ${r.error}`);
+        }
+      });
+    } else {
+      row.innerHTML = `
+        <div class="mcItemLeft">
+          <div class="mcVer mono" style="font-size:14px;">${escapeHtml(it.key)}</div>
+          <div class="mcSub">${escapeHtml(desc)}</div>
+        </div>
+        <div class="mcItemRight" style="gap:8px;">
+          <input class="inputMini mono" style="width:180px;" value="${escapeHtml(String(it.value ?? ''))}" data-br-opt="${escapeHtml(it.key)}" />
+          <button class="mcPickBtn" data-br-save="${escapeHtml(it.key)}">Сохранить</button>
+        </div>`;
+      const inp = row.querySelector('input[data-br-opt]');
+      const btn = row.querySelector('button[data-br-save]');
+      const save = async () => {
+        const v = String(inp?.value ?? '');
+        const r = await window.noc?.bedrockOptionsSet?.(it.key, v);
+        if (r?.ok) {
+          setStatus('Bedrock: настройки сохранены');
+          const idx = (state.bedrockOptions || []).findIndex(x => x.key === it.key);
+          if (idx >= 0) state.bedrockOptions[idx].value = v;
+        } else if (r?.error && r.error !== 'cancel') {
+          setStatus(`Bedrock: ошибка сохранения — ${r.error}`);
+        }
+      };
+      btn?.addEventListener('click', save);
+      inp?.addEventListener('keydown', (e) => { if (e.key === 'Enter') save(); });
+    }
+
     list.appendChild(row);
   }
   if ((state.bedrockOptions || []).length > 220) {
