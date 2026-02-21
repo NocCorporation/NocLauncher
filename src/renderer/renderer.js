@@ -3249,15 +3249,24 @@ async function renderBedrockOptions() {
 }
 
 const BEDROCK_OPTION_DESCRIPTIONS = {
-  'mp_server_visible': 'Разрешает/запрещает видимость твоего мира по сети.',
-  'mp_xboxlive_visible': 'Видимость мира для Xbox-друзей.',
+  'mp_server_visible': 'Видимость твоего мира по сети. ВКЛ: мир могут видеть/находить по сети. ВЫКЛ: мир скрыт.',
+  'mp_xboxlive_visible': 'Видимость мира для Xbox-друзей. ВКЛ: друзья видят и могут заходить. ВЫКЛ: через Xbox не видно.',
+  'mp_nex_visible': 'Показывать мир в сетевых сервисах Nintendo/кроссплатформе. ВКЛ: виден. ВЫКЛ: скрыт.',
+  'mp_psn_visible': 'Видимость мира для PSN/кроссплатформы. ВКЛ: доступнее для друзей. ВЫКЛ: скрыт.',
   'dvce_filestoragelocation': 'Где Bedrock хранит файлы мира/ресурсов (internal/external).',
   'gfx_viewdistance': 'Дальность прорисовки мира. Больше = красивее, но тяжелее для FPS.',
+  'gfx_particleviewdistance': 'Дальность отображения частиц. Больше = эффектнее, но больше нагрузка.',
+  'gfx_viewbobbing': 'Покачивание камеры при ходьбе. ВКЛ: живее, ВЫКЛ: стабильнее картинка (удобно для PvP).',
+  'gfx_damagebobbing': 'Тряска камеры при получении урона. ВКЛ: кинематографично, ВЫКЛ: меньше дискомфорта.',
+  'gfx_transparentleaves': 'Прозрачные листья. ВКЛ: красивее леса, ВЫКЛ: выше FPS.',
+  'gfx_smoothlighting': 'Сглаженное освещение. ВКЛ: мягкие тени, ВЫКЛ: резкая "классическая" картинка и выше FPS.',
+  'gfx_fancyskies': 'Расширенные эффекты неба. ВКЛ: красиво, ВЫКЛ: экономия ресурсов.',
+  'gfx_toggleclouds': 'Отображение облаков. ВКЛ: больше атмосферы, ВЫКЛ: +FPS и чище обзор.',
   'gfx_max_framerate': 'Лимит FPS (0 = без лимита).',
-  'gfx_vsync': 'Вертикальная синхронизация. Уменьшает разрывы кадра, может добавить задержку.',
-  'gfx_field_of_view': 'Угол обзора (FOV).',
+  'gfx_vsync': 'Вертикальная синхронизация. ВКЛ: меньше разрывов кадра, но иногда больше задержка.',
+  'gfx_field_of_view': 'Угол обзора (FOV). Выше = шире обзор, но сильнее искажение.',
   'gfx_particles': 'Количество частиц (эффекты).',
-  'gfx_bloom': 'Эффект свечения (Bloom).',
+  'gfx_bloom': 'Эффект свечения (Bloom). ВКЛ: сочнее картинка, ВЫКЛ: выше производительность.',
   'gfx_fancygraphics': 'Расширенная графика. Красивее, но тяжелее.',
   'audio_main': 'Общая громкость.',
   'audio_music': 'Громкость музыки.',
@@ -3265,8 +3274,9 @@ const BEDROCK_OPTION_DESCRIPTIONS = {
   'ctrl_sensitivity2_mouse': 'Чувствительность мыши.',
   'ctrl_sensitivity2_touch': 'Чувствительность касаний (тач).',
   'ctrl_sensitivity2_gamepad': 'Чувствительность геймпада.',
-  'ctrl_invertmouse_mouse': 'Инверсия оси Y для мыши.',
-  'show_advanced_video_settings': 'Показывать расширенные настройки графики.',
+  'ctrl_invertmouse_mouse': 'Инверсия оси Y для мыши. ВКЛ: "вверх-вниз наоборот".',
+  'ctrl_autojump_mouse': 'Автопрыжок. ВКЛ: игра прыгает сама у препятствий. ВЫКЛ: полный ручной контроль.',
+  'show_advanced_video_settings': 'Показывать расширенные настройки графики. ВКЛ: больше опций в меню.',
   'game_language': 'Язык игры.',
   'game_difficulty_new': 'Уровень сложности мира.'
 };
@@ -3284,9 +3294,12 @@ function renderBedrockOptionsList() {
   for (const it of items.slice(0, 220)) {
     const row = document.createElement('div');
     row.className = 'item mcItem';
-    const desc = BEDROCK_OPTION_DESCRIPTIONS[it.key] || it.comment || 'Параметр Bedrock options.txt';
+    const baseDesc = BEDROCK_OPTION_DESCRIPTIONS[it.key] || it.comment || 'Параметр Bedrock options.txt';
     const rawVal = String(it.value ?? '').trim().toLowerCase();
     const isBool = ['0', '1', 'true', 'false'].includes(rawVal);
+    const desc = isBool
+      ? `${baseDesc} | ВКЛ = активировано, ВЫКЛ = отключено.`
+      : baseDesc;
 
     if (isBool) {
       const isOn = (rawVal === '1' || rawVal === 'true');
