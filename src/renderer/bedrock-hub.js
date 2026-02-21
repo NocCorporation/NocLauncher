@@ -4,6 +4,19 @@
   let visibility = 'public';
   let transport = 'auto';
   let streamerMode = false;
+  let collapsed = false;
+
+  function paintCollapsed() {
+    document.body.classList.toggle('collapsed', collapsed);
+    const c = $('#btnCollapse');
+    if (c) c.textContent = collapsed ? 'Показать' : 'Скрыть';
+  }
+
+  function setCollapsed(next) {
+    collapsed = !!next;
+    try { localStorage.setItem('noc.bedrockHub.collapsed', collapsed ? '1' : '0'); } catch (_) {}
+    paintCollapsed();
+  }
 
   function setHostStatus(t) { const el = $('#hostStatus'); if (el) el.textContent = t; }
   function setInviteStatus(t) { const el = $('#inviteStatus'); if (el) el.textContent = t || ''; }
@@ -143,6 +156,9 @@
     } catch (_) { streamerMode = false; }
     paintStreamerMode();
 
+    try { collapsed = localStorage.getItem('noc.bedrockHub.collapsed') === '1'; } catch (_) { collapsed = false; }
+    paintCollapsed();
+
     $('#btnRefresh')?.addEventListener('click', async () => { await refresh(); await refreshDiagnostics(); });
     $('#btnOpenWorld')?.addEventListener('click', async () => {
       await window.noc.bedrockLaunch();
@@ -214,6 +230,12 @@
       const r = await window.noc.localServersJoinByCodeOpen(code);
       if (!r?.ok) { setInviteStatus(`Код не найден: ${r?.error || 'unknown'}`); return; }
       setInviteStatus(streamerMode ? 'Подключение открыто в Bedrock.' : `Подключение открыто (${r.route || 'direct'}): ${r.host || ''}:${r.port || ''}`);
+    });
+
+    $('#btnCollapse')?.addEventListener('click', () => setCollapsed(!collapsed));
+    $('#btnExpand')?.addEventListener('click', () => setCollapsed(false));
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'F8') setCollapsed(!collapsed);
     });
 
     $('#btnCloseWin')?.addEventListener('click', () => window.close());

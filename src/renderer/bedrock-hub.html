@@ -11,7 +11,7 @@
     .wrap{padding:8px}
     .shell{background:linear-gradient(180deg,rgba(35,42,66,.62),rgba(35,42,66,.72)), url('./img/hub-bg.png') center/cover no-repeat; border:1px solid rgba(0,0,0,.25);border-radius:14px;padding:10px;box-shadow:0 8px 28px rgba(0,0,0,.35)}
 
-    .hero{display:grid;grid-template-columns:52px 1fr auto;gap:10px;align-items:center;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:12px;padding:8px}
+    .hero{display:grid;grid-template-columns:52px 1fr auto auto;gap:10px;align-items:center;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:12px;padding:8px}
     .mcIcon{width:52px;height:52px;border-radius:10px;background:linear-gradient(180deg,#7ad35a,#4ca93a);display:grid;place-items:center;font-weight:900;color:#17340f}
     .heroT{font-weight:900;font-size:17px}
     .heroS{font-size:13px;color:var(--muted)}
@@ -32,6 +32,12 @@
 
     .join{background:var(--green);color:#133b0b;border:0;border-radius:9px;padding:10px 12px;font-weight:900;cursor:pointer}
     .join:disabled{opacity:.5}
+
+    .miniDock{display:none;position:fixed;top:8px;right:8px;z-index:9999}
+    .miniBtn{border:1px solid rgba(255,255,255,.18);background:rgba(24,30,45,.88);color:#fff;border-radius:12px;padding:8px 12px;font-weight:900;cursor:pointer}
+    body.collapsed .wrap{padding:0}
+    body.collapsed .shell{display:none}
+    body.collapsed .miniDock{display:block}
   </style>
 </head>
 <body>
@@ -44,6 +50,7 @@
           <div class="heroS">Многопользовательское лобби</div>
         </div>
         <button class="btn acc" id="btnHostToggle">ХОСТИНГ МИРА</button>
+        <button class="btn" id="btnCollapse" title="Скрыть панель">Скрыть</button>
       </div>
 
       <div class="row">
@@ -71,6 +78,9 @@
       <div class="row"><button class="btn acc" style="width:100%">СМОТРЕТЬ БОЛЬШЕ</button></div>
       <button class="btn" id="btnCloseWin" style="position:absolute;left:-9999px">✕</button>
     </div>
+  </div>
+  <div class="miniDock" id="miniDock">
+    <button class="miniBtn" id="btnExpand">Открыть панель</button>
   </div>
   <script src="./bedrock-hub.js"></script>
 </body>
