@@ -565,6 +565,8 @@ let catalogWinCurseforge = null;
 
 let splashWin = null;
 let bedrockHubWin = null;
+const BEDROCK_HUB_EXPANDED = { width: 760, height: 480, minWidth: 680, minHeight: 420 };
+const BEDROCK_HUB_COLLAPSED = { width: 220, height: 56, minWidth: 220, minHeight: 56 };
 let launcherClient = null;
 let pendingAuth = null;
 let pendingAuthId = null;
@@ -801,10 +803,10 @@ function openBedrockHubWindow() {
     }
 
     bedrockHubWin = new BrowserWindow({
-      width: 760,
-      height: 480,
-      minWidth: 680,
-      minHeight: 420,
+      width: BEDROCK_HUB_EXPANDED.width,
+      height: BEDROCK_HUB_EXPANDED.height,
+      minWidth: BEDROCK_HUB_EXPANDED.minWidth,
+      minHeight: BEDROCK_HUB_EXPANDED.minHeight,
       title: 'NocLauncher — Локальные сервера',
       autoHideMenuBar: true,
       frame: false,
@@ -832,6 +834,23 @@ function openBedrockHubWindow() {
     bedrockHubWin.on('closed', () => { bedrockHubWin = null; });
     bedrockHubWin.loadFile(path.join(RENDERER_DIR, 'bedrock-hub.html'));
     return { ok: true, reused: false };
+  } catch (e) {
+    return { ok: false, error: String(e?.message || e) };
+  }
+}
+
+function setBedrockHubCollapsed(collapsed) {
+  try {
+    if (!bedrockHubWin || bedrockHubWin.isDestroyed()) return { ok: false, error: 'hub_not_open' };
+    const area = screen.getDisplayMatching(bedrockHubWin.getBounds())?.workArea || screen.getPrimaryDisplay().workArea;
+    const mode = collapsed ? BEDROCK_HUB_COLLAPSED : BEDROCK_HUB_EXPANDED;
+    bedrockHubWin.setMinimumSize(mode.minWidth, mode.minHeight);
+    bedrockHubWin.setSize(mode.width, mode.height, true);
+    const [w, h] = bedrockHubWin.getSize();
+    const x = Math.max(area.x + 8, area.x + area.width - w - 12);
+    const y = area.y + 10;
+    bedrockHubWin.setPosition(x, y);
+    return { ok: true, collapsed: !!collapsed };
   } catch (e) {
     return { ok: false, error: String(e?.message || e) };
   }
@@ -3679,6 +3698,10 @@ ipcMain.handle('localservers:joinByCodeOpen', async (_e, payload) => {
 ipcMain.handle('bedrock:hubOpen', async () => {
   ensureAutoLocalHostWatcher();
   return openBedrockHubWindow();
+});
+
+ipcMain.handle('bedrock:hubSetCollapsed', async (_e, payload) => {
+  return setBedrockHubCollapsed(!!payload?.collapsed);
 });
 
 ipcMain.handle('bedrock:hostStatus', async () => {

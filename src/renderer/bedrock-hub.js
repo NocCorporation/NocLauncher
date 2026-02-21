@@ -12,10 +12,11 @@
     if (c) c.textContent = collapsed ? 'Показать' : 'Скрыть';
   }
 
-  function setCollapsed(next) {
+  async function setCollapsed(next) {
     collapsed = !!next;
     try { localStorage.setItem('noc.bedrockHub.collapsed', collapsed ? '1' : '0'); } catch (_) {}
     paintCollapsed();
+    try { await window.noc.bedrockHubSetCollapsed(collapsed); } catch (_) {}
   }
 
   function setHostStatus(t) { const el = $('#hostStatus'); if (el) el.textContent = t; }
@@ -157,7 +158,7 @@
     paintStreamerMode();
 
     try { collapsed = localStorage.getItem('noc.bedrockHub.collapsed') === '1'; } catch (_) { collapsed = false; }
-    paintCollapsed();
+    await setCollapsed(collapsed);
 
     $('#btnRefresh')?.addEventListener('click', async () => { await refresh(); await refreshDiagnostics(); });
     $('#btnOpenWorld')?.addEventListener('click', async () => {
