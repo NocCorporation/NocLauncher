@@ -2545,7 +2545,7 @@ function wireUI() {
   $('#btnBedrockSkins')?.addEventListener('click', () => openBedrockContent('skins'));
   $('#btnBedrockLibrary')?.addEventListener('click', () => openBedrockContent('packs'));
   $('#btnBedrockAddons')?.addEventListener('click', async () => {
-    const url = 'https://mcpedl.com/';
+    const url = 'https://www.planetminecraft.com/bedrock/';
     const r = await window.noc?.webOpen?.({ key: 'bedrock-addons', title: 'Bedrock Addons', url });
     if (!r?.ok) {
       try { await window.noc?.shellOpenExternal?.(url); } catch (_) {}
