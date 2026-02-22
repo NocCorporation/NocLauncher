@@ -162,10 +162,18 @@
 
     $('#btnRefresh')?.addEventListener('click', async () => { await refresh(); await refreshDiagnostics(); });
     $('#btnAddCreatorFriend')?.addEventListener('click', async () => {
-      const url = 'https://account.xbox.com/Profile?gamertag=GoshGame5696';
+      const deep = 'xbox://profile?gamertag=GoshGame5696';
+      const web = 'https://account.xbox.com/Profile?gamertag=GoshGame5696';
       try {
-        await window.noc.shellOpenExternal(url);
-        setInviteStatus('Открываю профиль Xbox: GoshGame5696');
+        const r = await window.noc.shellOpenExternal(deep);
+        if (r?.ok) {
+          setInviteStatus('Открываю профиль Xbox в приложении: GoshGame5696');
+          return;
+        }
+      } catch (_) {}
+      try {
+        await window.noc.shellOpenExternal(web);
+        setInviteStatus('Открываю профиль Xbox в браузере: GoshGame5696');
       } catch (_) {
         setInviteStatus('Не удалось открыть профиль Xbox.');
       }

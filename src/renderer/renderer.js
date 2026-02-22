@@ -2841,10 +2841,18 @@ function wireUI() {
   });
 
   $('#btnAddCreatorFriendMain')?.addEventListener('click', async () => {
-    const url = 'https://account.xbox.com/Profile?gamertag=GoshGame5696';
+    const deep = 'xbox://profile?gamertag=GoshGame5696';
+    const web = 'https://account.xbox.com/Profile?gamertag=GoshGame5696';
     try {
-      await window.noc.shellOpenExternal(url);
-      setStatus('Открываю профиль Xbox: GoshGame5696');
+      const r = await window.noc.shellOpenExternal(deep);
+      if (r?.ok) {
+        setStatus('Открываю профиль Xbox в приложении: GoshGame5696');
+        return;
+      }
+    } catch (_) {}
+    try {
+      await window.noc.shellOpenExternal(web);
+      setStatus('Открываю профиль Xbox в браузере: GoshGame5696');
     } catch (_) {
       setStatus('Не удалось открыть профиль Xbox.');
     }
