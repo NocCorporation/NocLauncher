@@ -34,17 +34,19 @@
     .join:disabled{opacity:.5}
 
     .miniDock{display:none;position:fixed;top:8px;right:8px;z-index:9999;gap:8px;align-items:center}
-    .miniBtn{border:1px solid rgba(255,255,255,.18);background:rgba(24,30,45,.88);color:#fff;border-radius:12px;padding:8px 12px;font-weight:900;cursor:pointer}
+    .miniBtn{border:1px solid rgba(255,255,255,.18);background:linear-gradient(180deg,rgba(40,48,72,.92),rgba(24,30,45,.92));color:#fff;border-radius:12px;padding:8px 12px;font-weight:900;cursor:pointer;backdrop-filter:blur(6px);transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease}
+    .miniBtn:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,.28);border-color:rgba(255,255,255,.28)}
     #btnMiniSettings{padding:8px 10px;min-width:40px}
-    .miniMenu{display:none;position:fixed;top:56px;right:0;z-index:10000;background:rgba(24,30,45,.96);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:10px;width:100%;box-shadow:0 10px 26px rgba(0,0,0,.35);overflow:hidden}
+    .miniMenu{display:none;position:fixed;top:56px;right:0;z-index:10000;background:linear-gradient(180deg,rgba(36,44,66,.94),rgba(20,25,38,.94));border:1px solid rgba(255,255,255,.20);border-radius:12px;padding:10px;width:100%;box-shadow:0 10px 26px rgba(0,0,0,.35);overflow:hidden;backdrop-filter:blur(8px);transform-origin:top right;transform:translateY(-6px) scale(.98);opacity:0;pointer-events:none;transition:transform .2s ease,opacity .2s ease}
     .miniMenuRow{display:flex;align-items:center;justify-content:space-between;gap:10px}
-    .miniMenuTitle{font-size:13px;color:var(--muted);font-weight:800;white-space:nowrap}
-    .miniToggle{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;border-radius:10px;padding:6px 10px;font-weight:900;cursor:pointer;min-width:74px}
-    .miniToggle.acc{background:var(--green);color:#133b0b;border:0}
+    .miniMenuTitle{font-size:13px;color:var(--muted);font-weight:800;white-space:nowrap;letter-spacing:.2px}
+    .miniToggle{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#fff;border-radius:10px;padding:6px 10px;font-weight:900;cursor:pointer;min-width:74px;transition:transform .16s ease, box-shadow .16s ease, filter .16s ease}
+    .miniToggle:hover{transform:translateY(-1px);box-shadow:0 5px 14px rgba(0,0,0,.24)}
+    .miniToggle.acc{background:linear-gradient(180deg,#79ef4f,#47c82b);color:#133b0b;border:0;filter:saturate(1.05)}
     body.collapsed .wrap{padding:0}
     body.collapsed .shell{display:none}
     body.collapsed .miniDock{display:flex}
-    body.collapsed.menu-open .miniMenu{display:block}
+    body.collapsed.menu-open .miniMenu{display:block;transform:translateY(0) scale(1);opacity:1;pointer-events:auto}
   </style>
 </head>
 <body>
@@ -91,7 +93,7 @@
     <button class="miniBtn" id="btnExpand">Открыть панель</button>
     <button class="miniBtn" id="btnMiniSettings" title="Быстрые настройки" aria-label="Быстрые настройки">⚙</button>
   </div>
-  <div class="miniMenu" id="miniMenu" aria-label="Быстрые настройки Bedrock">
+  <div class="miniMenu" id="miniMenu" aria-label="Быстрые настройки Bedrock" role="dialog">
     <div class="miniMenuRow">
       <div class="miniMenuTitle">FPS монитор</div>
       <button class="miniToggle" id="btnMiniFps">ВЫКЛ</button>
