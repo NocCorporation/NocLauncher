@@ -4351,40 +4351,18 @@ ipcMain.handle('bedrock:launch', async () => {
     appendBedrockLaunchLog('INFO: launching minecraft://');
     await shell.openExternal('minecraft://');
 
-    // Verify process really started; if not, try fallback app launch once.
-    let started = false;
-    for (let i = 0; i < 10; i++) {
-      await new Promise(r => setTimeout(r, 700));
-      if (isBedrockRunning()) { started = true; break; }
-    }
-
-    if (!started) {
-      appendBedrockLaunchLog('WARN: Minecraft.Windows.exe not detected after minecraft://, trying shell:AppsFolder fallback');
+    // Non-blocking diagnostics in background (do not block launch path)
+    setTimeout(() => {
       try {
-        await execFileAsync('cmd', ['/c', 'start', '', 'shell:AppsFolder\\Microsoft.MinecraftUWP_8wekyb3d8bbwe!App'], { windowsHide: true });
-      } catch (e2) {
-        appendBedrockLaunchLog(`WARN: AppsFolder fallback failed: ${String(e2?.message || e2)}`);
+        const running = isBedrockRunning();
+        appendBedrockLaunchLog(running ? 'INFO: Bedrock process detected' : 'WARN: Bedrock process not detected after 4s');
+      } catch (e) {
+        appendBedrockLaunchLog(`WARN: post-launch check failed: ${String(e?.message || e)}`);
       }
-      for (let i = 0; i < 8; i++) {
-        await new Promise(r => setTimeout(r, 700));
-        if (isBedrockRunning()) { started = true; break; }
-      }
-    }
+    }, 4000);
 
-    if (!started) {
-      appendBedrockLaunchLog('ERROR: Bedrock still not running after retries; suggest MS Fix/Xbox Fixer');
-      restoreLauncherAfterGame();
-      return {
-        ok: false,
-        error: `Bedrock не запустился. Открой MS Fix/Xbox Fixer и проверь launcher_logs/latest-bedrock.txt`,
-        logPath: bedrockLogPath || ''
-      };
-    }
-
-    appendBedrockLaunchLog('INFO: Bedrock process detected, launch OK');
     watchBedrockAndRestore();
     ensureAutoLocalHostWatcher();
-    // Show Omlet-like local servers hub window alongside Bedrock session
     setTimeout(() => { try { openBedrockHubWindow(); } catch (_) {} }, 900);
     return { ok: true, logPath: bedrockLogPath || '' };
   } catch (e) {
