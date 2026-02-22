@@ -4741,6 +4741,45 @@ function writeOptionsTxt(optionsPath, lines) {
   fs.writeFileSync(optionsPath, lines.join(os.EOL), 'utf8');
 }
 
+function resolveBedrockTreatmentsFile() {
+  const p = bedrockPaths();
+  if (!p) return null;
+  ensureDir(p.minecraftpe);
+  try {
+    const files = fs.readdirSync(p.minecraftpe).filter(n => /^treatment_tags---.*\.json$/i.test(String(n || '')));
+    if (files.length) {
+      files.sort((a, b) => {
+        try {
+          const sa = fs.statSync(path.join(p.minecraftpe, a)).mtimeMs || 0;
+          const sb = fs.statSync(path.join(p.minecraftpe, b)).mtimeMs || 0;
+          return sb - sa;
+        } catch (_) { return 0; }
+      });
+      return path.join(p.minecraftpe, files[0]);
+    }
+  } catch (_) {}
+  return path.join(p.minecraftpe, 'treatment_tags---noclauncher.json');
+}
+
+function readBedrockTreatments() {
+  const filePath = resolveBedrockTreatmentsFile();
+  if (!filePath) return { ok: false, error: 'paths_not_found' };
+  try {
+    if (!fs.existsSync(filePath)) fs.writeFileSync(filePath, JSON.stringify({ tags: [] }, null, 2), 'utf8');
+    const raw = fs.readFileSync(filePath, 'utf8');
+    const data = JSON.parse(raw || '{}');
+    const tags = Array.isArray(data.tags) ? data.tags.map(x => String(x || '').trim()).filter(Boolean) : [];
+    return { ok: true, path: filePath, data, tags: Array.from(new Set(tags)).sort((a, b) => a.localeCompare(b)) };
+  } catch (e) {
+    return { ok: false, error: String(e?.message || e), path: filePath };
+  }
+}
+
+function writeBedrockTreatments(filePath, tags, data = {}) {
+  const out = { ...(data || {}), tags: Array.from(new Set((tags || []).map(x => String(x || '').trim()).filter(Boolean)) };
+  fs.writeFileSync(filePath, JSON.stringify(out, null, 2), 'utf8');
+}
+
 function applyBedrockLaunchDefaults() {
   try {
     const p = bedrockPaths();
@@ -4884,6 +4923,40 @@ ipcMain.handle('bedrock:optionsApplyPreset', async (_e, { preset }) => {
     return { ok: true, applied: Object.keys(cfg).length };
   } catch (e) {
     return { ok: false, error: String(e?.message || e) };
+  }
+});
+
+ipcMain.handle('bedrock:treatmentsRead', async () => {
+  if (process.platform !== 'win32') return { ok: false, error: 'Windows only', tags: [] };
+  return readBedrockTreatments();
+});
+
+ipcMain.handle('bedrock:treatmentsSet', async (_e, { tag, enabled }) => {
+  if (process.platform !== 'win32') return { ok: false, error: 'Windows only' };
+  const t = String(tag || '').trim();
+  if (!t) return { ok: false, error: 'tag_required' };
+  const r = readBedrockTreatments();
+  if (!r.ok) return r;
+  const set = new Set(r.tags || []);
+  if (enabled) set.add(t); else set.delete(t);
+  try {
+    writeBedrockTreatments(r.path, Array.from(set), r.data);
+    return { ok: true, path: r.path, enabled: !!enabled };
+  } catch (e) {
+    return { ok: false, error: String(e?.message || e), path: r.path };
+  }
+});
+
+ipcMain.handle('bedrock:treatmentsBackup', async () => {
+  if (process.platform !== 'win32') return { ok: false, error: 'Windows only' };
+  const r = readBedrockTreatments();
+  if (!r.ok) return r;
+  try {
+    const backup = `${r.path}.bak_${new Date().toISOString().replace(/[:.]/g, '-').slice(0,19)}`;
+    fs.copyFileSync(r.path, backup);
+    return { ok: true, path: r.path, backup };
+  } catch (e) {
+    return { ok: false, error: String(e?.message || e), path: r.path };
   }
 });
 

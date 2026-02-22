@@ -701,6 +701,7 @@ const state = {
   bedrockCheckToken: 0,
   bedrockOptions: [],
   bedrockUsefulOnly: false,
+  bedrockTreatments: [],
   profiles: [],
   loaderInstalled: false,
   resolvedLoaderProfile: null,
@@ -2552,6 +2553,10 @@ function wireUI() {
     }
   });
   $('#btnBedrockVirusCheck')?.addEventListener('click', () => openModal('modalBedrockVirus'));
+  $('#btnBedrockExperiments')?.addEventListener('click', async () => {
+    await renderBedrockTreatments();
+    openModal('modalBedrockExperiments');
+  });
   $('#btnBedrockSkinsSite')?.addEventListener('click', async () => {
     const url = 'https://namemc.com/minecraft-skins';
     const r = await window.noc?.webOpen?.({ key: 'bedrock-skins', title: 'Minecraft Skins', url });
@@ -2624,6 +2629,34 @@ function wireUI() {
   $('#btnCloseBedrockContent')?.addEventListener('click', () => closeModal('modalBedrockContent'));
 
   $('#btnCloseBedrockVirus')?.addEventListener('click', () => closeModal('modalBedrockVirus'));
+  $('#btnCloseBedrockExperiments')?.addEventListener('click', () => closeModal('modalBedrockExperiments'));
+  $('#btnBrExpRefresh')?.addEventListener('click', async () => renderBedrockTreatments());
+  $('#btnBrExpBackup')?.addEventListener('click', async () => {
+    const r = await window.noc?.bedrockTreatmentsBackup?.();
+    const h = $('#bedrockExpHint');
+    if (r?.ok) {
+      if (h) h.textContent = `Файл: ${r.path || '—'} • Бэкап: ${r.backup || '—'}`;
+      setStatus('Bedrock: бэкап treatment tags создан');
+    } else if (r?.error && r.error !== 'cancel') {
+      setStatus(`Bedrock: бэкап не создан — ${r.error}`);
+    }
+  });
+  $('#brExpSearch')?.addEventListener('input', () => renderBedrockTreatmentsList());
+  $('#modalBedrockExperiments')?.addEventListener('click', async (e) => {
+    const b = e.target?.closest?.('button[data-br-exp-toggle]');
+    if (!b) return;
+    const tag = String(b.getAttribute('data-br-exp-toggle') || '');
+    const on = String(b.getAttribute('data-on') || '0') === '1';
+    const r = await window.noc?.bedrockTreatmentsSet?.(tag, !on);
+    if (r?.ok) {
+      const i = (state.bedrockTreatments || []).findIndex(x => x.tag === tag);
+      if (i >= 0) state.bedrockTreatments[i].enabled = !on;
+      renderBedrockTreatmentsList();
+      setStatus('Bedrock: treatment tag обновлён');
+    } else if (r?.error && r.error !== 'cancel') {
+      setStatus(`Bedrock: ошибка treatment tag — ${r.error}`);
+    }
+  });
   $('#modalBedrockVirus')?.addEventListener('click', async (e) => {
     const b = e.target?.closest?.('button[data-virus-url]');
     if (!b) return;
@@ -3033,7 +3066,7 @@ function wireUI() {
   });
 
 
-  ['modalVersions', 'modalSettings', 'modalCrash', 'modalBedrockVersions', 'modalBedrockContent', 'modalBedrockVirus', 'modalProfiles', 'modalAuth'].forEach((id) => {
+  ['modalVersions', 'modalSettings', 'modalCrash', 'modalBedrockVersions', 'modalBedrockContent', 'modalBedrockVirus', 'modalBedrockExperiments', 'modalProfiles', 'modalAuth'].forEach((id) => {
     const m = document.getElementById(id);
     if (!m) return;
     m.addEventListener('pointerdown', (e) => { if (e.target === m) closeModal(id); });
@@ -3046,6 +3079,7 @@ function wireUI() {
     if (!$('#modalCrash')?.classList.contains('hidden')) closeModal('modalCrash');
     if (!$('#modalBedrockVersions')?.classList.contains('hidden')) closeModal('modalBedrockVersions');
     if (!$('#modalBedrockVirus')?.classList.contains('hidden')) closeModal('modalBedrockVirus');
+    if (!$('#modalBedrockExperiments')?.classList.contains('hidden')) closeModal('modalBedrockExperiments');
     if (!$('#modalLocalServers')?.classList.contains('hidden')) closeModal('modalLocalServers');
     if (!$('#modalProfiles')?.classList.contains('hidden')) closeModal('modalProfiles');
     if (!$('#modalAuth')?.classList.contains('hidden')) closeModal('modalAuth');
@@ -3526,6 +3560,74 @@ async function applyBedrockPreset(name) {
     await renderBedrockOptions();
   } else {
     setStatus(`Bedrock: ошибка пресета — ${r?.error || 'unknown'}`);
+  }
+}
+
+function describeTreatmentTag(tag) {
+  const t = String(tag || '').toLowerCase();
+  const map = {
+    'mc-enable-inbox': 'Входящие уведомления/инбокс в интерфейсе.',
+    'mc-store-enableinbox': 'Интеграция инбокса в магазин.',
+    'mc-new-disconnect-screen': 'Новый экран отключения от мира/сервера.',
+    'mc-new-friends-drawer': 'Новый боковой блок друзей.',
+    'mc-friends-in-worlds-tab': 'Показывать друзей во вкладке миров.',
+    'mc-add-friends': 'Функции добавления друзей.',
+    'mc-realms-button-2024': 'Новая версия кнопки Realms.',
+    'mc-screenshots-gallery': 'Галерея скриншотов в клиенте.',
+    'mc-screenshots-controls': 'Элементы управления скриншотами.',
+    'mc-enable-gametips-feature': 'Игровые подсказки/советы.'
+  };
+  if (map[t]) return map[t];
+  if (t.includes('friends')) return 'Функции друзей/социального списка.';
+  if (t.includes('realms')) return 'Функции Realms и подписок.';
+  if (t.includes('inbox') || t.includes('messaging')) return 'Уведомления/сообщения и связанный UX.';
+  if (t.includes('store') || t.includes('marketplace') || t.includes('purchasing')) return 'Функции магазина/маркетплейса и покупок.';
+  if (t.includes('screenshots')) return 'Функции скриншотов и медиа.';
+  if (t.includes('profile') || t.includes('persona')) return 'Функции профиля/персонажа.';
+  if (t.includes('pause') || t.includes('menu')) return 'Изменения паузы/меню.';
+  if (t.includes('signaling') || t.includes('service') || t.includes('rpc')) return 'Служебная сеть/бэкенд-функция (лучше менять аккуратно).';
+  return 'Служебный/экспериментальный тег Bedrock (A/B feature flag).';
+}
+
+async function renderBedrockTreatments() {
+  const hint = $('#bedrockExpHint');
+  const list = $('#brExpList');
+  if (list) list.innerHTML = '';
+  const r = await window.noc?.bedrockTreatmentsRead?.();
+  if (!r?.ok) {
+    state.bedrockTreatments = [];
+    if (hint) hint.textContent = `Не удалось прочитать treatment tags: ${r?.error || 'unknown'}`;
+    renderBedrockTreatmentsList();
+    return;
+  }
+  state.bedrockTreatments = (r.tags || []).map(tag => ({ tag, enabled: true }));
+  if (hint) hint.textContent = `Файл: ${r.path || '—'} • тегов: ${state.bedrockTreatments.length}`;
+  renderBedrockTreatmentsList();
+}
+
+function renderBedrockTreatmentsList() {
+  const list = $('#brExpList');
+  if (!list) return;
+  list.innerHTML = '';
+  const q = String($('#brExpSearch')?.value || '').trim().toLowerCase();
+  const items = (state.bedrockTreatments || []).filter(x => !q || String(x.tag || '').toLowerCase().includes(q));
+  if (!items.length) {
+    list.innerHTML = '<div class="mcSub">Ничего не найдено.</div>';
+    return;
+  }
+  for (const it of items.slice(0, 600)) {
+    const on = !!it.enabled;
+    const row = document.createElement('div');
+    row.className = 'item mcItem';
+    row.innerHTML = `
+      <div class="mcItemLeft">
+        <div class="mcVer mono" style="font-size:14px;">${escapeHtml(it.tag)}</div>
+        <div class="mcSub">${escapeHtml(describeTreatmentTag(it.tag))}</div>
+      </div>
+      <div class="mcItemRight" style="gap:8px; align-items:center;">
+        <button class="mcPickBtn" data-br-exp-toggle="${escapeHtml(it.tag)}" data-on="${on ? '1' : '0'}" style="min-width:96px;">${on ? 'ВКЛ' : 'ВЫКЛ'}</button>
+      </div>`;
+    list.appendChild(row);
   }
 }
 

@@ -135,6 +135,7 @@
                     <button class="chip chipSmall" id="btnBedrockXboxFix" type="button">Xbox Fixer</button>
                     <button class="chip chipSmall" id="btnBedrockVirusCheck" type="button">Проверка на вирусы</button>
                     <button class="chip chipSmall" id="btnBedrockSkinsSite" type="button">Скачать скины</button>
+                    <button class="chip chipSmall" id="btnBedrockExperiments" type="button">Эксперименты</button>
                   </div>
                 </div>
 
@@ -539,6 +540,32 @@
               <button class="btn mini ghost" data-virus-url="https://www.ipqualityscore.com/">IPQualityScore</button>
               <button class="btn mini ghost" data-virus-url="https://www.abuseipdb.com/">AbuseIPDB</button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal hidden" id="modalBedrockExperiments" role="dialog" aria-label="Bedrock эксперименты" aria-modal="true">
+        <div class="modalCard" style="max-width: 980px;">
+          <div class="modalHead">
+            <div class="modalTitle">Bedrock: эксперименты / treatment tags</div>
+            <button class="iconBtn" id="btnCloseBedrockExperiments" type="button" aria-label="Закрыть">✕</button>
+          </div>
+          <div class="form">
+            <div class="formRow">
+              <div class="lbl">Файл и действия</div>
+              <div class="hrow" style="gap:8px; justify-content:flex-end; flex-wrap:wrap;">
+                <button class="btn mini ghost" id="btnBrExpRefresh" type="button">Обновить</button>
+                <button class="btn mini" id="btnBrExpBackup" type="button">Бэкап</button>
+              </div>
+            </div>
+            <div class="help" id="bedrockExpHint">—</div>
+
+            <div class="formRow" style="margin-top:10px;">
+              <div class="lbl">Все теги</div>
+              <input class="input" id="brExpSearch" placeholder="Поиск по тегу (например friends, realms, inbox)" />
+            </div>
+            <div class="list" id="brExpList"></div>
+            <div class="help">Вкл = тег присутствует в файле. Выкл = тег удалён из списка. Перед изменениями делай бэкап.</div>
           </div>
         </div>
       </div>
