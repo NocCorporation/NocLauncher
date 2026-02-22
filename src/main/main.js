@@ -1028,6 +1028,7 @@ function isBedrockRunning() {
 let bedrockFpsMonitorProc = null;
 let bedrockFpsMonitorBuf = '';
 let bedrockFpsMonitorTimer = null;
+let bedrockFpsCsvPath = '';
 let bedrockFpsState = {
   enabled: false,
   backend: 'none',
@@ -1085,6 +1086,7 @@ function stopBedrockFpsMonitor() {
     if (fs.existsSync(pm)) execFileSync(pm, ['--session_name', 'NocFPS', '--terminate_existing_session'], { stdio: ['ignore', 'ignore', 'ignore'] });
   } catch (_) {}
   bedrockFpsMonitorBuf = '';
+  bedrockFpsCsvPath = '';
   bedrockFpsState.enabled = false;
   emitBedrockFpsState();
   return { ok: true };
@@ -1115,11 +1117,18 @@ async function startBedrockFpsMonitor() {
       [...base, '-process_name', 'MinecraftWindowsBeta.exe', '-output_stdout']
     ];
 
+    const fpsDir = path.join(APP_ROOT, 'tools', 'presentmon');
+    ensureDir(fpsDir);
+    bedrockFpsCsvPath = path.join(fpsDir, 'noc-fps.csv');
+    try { if (fs.existsSync(bedrockFpsCsvPath)) fs.unlinkSync(bedrockFpsCsvPath); } catch (_) {}
+
     let proc = null;
     let lastErr = '';
     for (const args of argVariants) {
       try {
-        proc = childProcess.spawn(pm.exe, args, { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+        const fullArgs = args.filter(a => a !== '--output_stdout' && a !== '-output_stdout');
+        fullArgs.push('--output_file', bedrockFpsCsvPath, '--no_console_stats', '--v1_metrics');
+        proc = childProcess.spawn(pm.exe, fullArgs, { windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'] });
         if (proc?.pid) { lastErr = ''; break; }
       } catch (e) {
         lastErr = String(e?.message || e);
@@ -1128,6 +1137,7 @@ async function startBedrockFpsMonitor() {
     if (!proc) throw new Error(lastErr || 'presentmon_spawn_failed');
 
     bedrockFpsMonitorProc = proc;
+    let csvLastSize = 0;
     let header = null;
     let msIdx = -1;
     let procIdx = -1;
@@ -1158,15 +1168,22 @@ async function startBedrockFpsMonitor() {
       emitBedrockFpsState();
     };
 
-    proc.stdout?.on('data', (chunk) => {
-      bedrockFpsMonitorBuf += chunk.toString('utf8');
-      let i;
-      while ((i = bedrockFpsMonitorBuf.indexOf('\n')) >= 0) {
-        const line = bedrockFpsMonitorBuf.slice(0, i);
-        bedrockFpsMonitorBuf = bedrockFpsMonitorBuf.slice(i + 1);
-        onLine(line);
-      }
-    });
+    const pollCsv = () => {
+      try {
+        if (!bedrockFpsCsvPath || !fs.existsSync(bedrockFpsCsvPath)) return;
+        const st = fs.statSync(bedrockFpsCsvPath);
+        const size = Number(st.size || 0);
+        if (size <= csvLastSize) return;
+        const buf = fs.readFileSync(bedrockFpsCsvPath, 'utf8');
+        csvLastSize = size;
+        const lines = String(buf || '').split(/\r?\n/);
+        const tail = lines.slice(-220);
+        for (const ln of tail) onLine(ln);
+      } catch (_) {}
+    };
+
+    bedrockFpsMonitorTimer = setInterval(pollCsv, 700);
+    setTimeout(pollCsv, 900);
 
     let stderrText = '';
     proc.stderr?.on('data', (d) => {
