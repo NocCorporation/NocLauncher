@@ -1163,10 +1163,7 @@ async function startBedrockFpsMonitor() {
   if (process.platform !== 'win32') return { ok: false, error: 'windows_only' };
   if (bedrockFpsState.enabled) return { ok: true, already: true };
 
-  if (!hasPresentMonAccess()) {
-    // One-time attempt to grant access; do not hard-block start in this turn.
-    requestPresentMonAccessSetup();
-  }
+  // Do not force UAC/group changes here to avoid intrusive popups/console side effects.
 
   const pm = await ensurePresentMonBinary();
   if (!pm?.ok) {
@@ -1180,28 +1177,20 @@ async function startBedrockFpsMonitor() {
   openBedrockFpsOverlayWindow();
 
   try {
-    const fpsDir = path.join(APP_ROOT, 'tools', 'presentmon');
-    ensureDir(fpsDir);
-    bedrockFpsCsvPath = path.join(fpsDir, 'noc-fps.csv');
-    try { if (fs.existsSync(bedrockFpsCsvPath)) fs.unlinkSync(bedrockFpsCsvPath); } catch (_) {}
-
-    const argList = [
-      '--session_name','NocFPS','--stop_existing_session','--restart_as_admin',
+    const args = [
+      '--session_name','NocFPS','--stop_existing_session',
       '--process_name','Minecraft.Windows.exe','--process_name','MinecraftWindowsBeta.exe','--process_name','javaw.exe','--process_name','java.exe',
-      '--output_file', bedrockFpsCsvPath,
-      '--no_console_stats','--v1_metrics','--terminate_on_proc_exit'
-    ].map(a => `'${String(a).replace(/'/g, "''")}'`).join(',');
-    const cmd = `$pm='${String(pm.exe).replace(/'/g,"''")}'; Start-Process -FilePath $pm -ArgumentList @(${argList}) -WindowStyle Hidden`;
-    childProcess.execFile('powershell', ['-NoProfile', '-WindowStyle', 'Hidden', '-Command', cmd], { windowsHide: true }, () => {});
+      '--output_stdout','--no_console_stats','--v1_metrics','--terminate_on_proc_exit'
+    ];
 
-    // One-shot hide only (frequent powershell polling causes mouse/input stutter on some PCs).
-    const hidePs = "$sig='[DllImport(\"user32.dll\")] public static extern bool ShowWindowAsync(IntPtr hWnd,int nCmdShow);'; Add-Type -Namespace NOC -Name Win -MemberDefinition $sig -ErrorAction SilentlyContinue | Out-Null; Get-Process PresentMon,conhost,cmd -ErrorAction SilentlyContinue | ForEach-Object { if($_.MainWindowHandle -ne 0){ [NOC.Win]::ShowWindowAsync($_.MainWindowHandle,0) | Out-Null } }";
-    try { childProcess.execFile('powershell', ['-NoProfile', '-WindowStyle', 'Hidden', '-Command', hidePs], { windowsHide: true }, () => {}); } catch (_) {}
+    // Spawn directly hidden (no powershell/start-process wrapper).
+    const proc = childProcess.spawn(pm.exe, args, { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+    bedrockFpsMonitorProc = proc;
 
-    let csvLastSize = 0;
     let header = null;
     let msIdx = -1;
     let procIdx = -1;
+    let stderrText = '';
 
     const onLine = (line) => {
       const s = String(line || '').trim();
@@ -1231,29 +1220,36 @@ async function startBedrockFpsMonitor() {
       emitBedrockFpsState();
     };
 
-    const pollCsv = () => {
-      try {
-        if (!bedrockFpsCsvPath || !fs.existsSync(bedrockFpsCsvPath)) return;
-        const st = fs.statSync(bedrockFpsCsvPath);
-        const size = Number(st.size || 0);
-        if (size <= csvLastSize) return;
-        const buf = fs.readFileSync(bedrockFpsCsvPath, 'utf8');
-        csvLastSize = size;
-        const lines = String(buf || '').split(/\r?\n/).filter(Boolean);
-        if (!lines.length) return;
-        if (!header) onLine(lines[0]);
-        const tail = lines.slice(Math.max(1, lines.length - 300));
-        for (const ln of tail) onLine(ln);
-      } catch (_) {}
-    };
+    proc.stdout?.on('data', (chunk) => {
+      bedrockFpsMonitorBuf += String(chunk || '');
+      let i;
+      while ((i = bedrockFpsMonitorBuf.indexOf('\n')) >= 0) {
+        const ln = bedrockFpsMonitorBuf.slice(0, i);
+        bedrockFpsMonitorBuf = bedrockFpsMonitorBuf.slice(i + 1);
+        onLine(ln);
+      }
+    });
 
-    bedrockFpsMonitorTimer = setInterval(pollCsv, 900);
-    setTimeout(pollCsv, 900);
+    proc.stderr?.on('data', (d) => {
+      const s = String(d || '').trim();
+      if (!s) return;
+      stderrText = `${stderrText}\n${s}`.slice(-800);
+    });
+
+    proc.on('exit', () => {
+      bedrockFpsMonitorProc = null;
+      if (!bedrockFpsState.enabled) return;
+      if ((bedrockFpsState.samples || 0) > 0) return;
+      bedrockFpsState.enabled = false;
+      bedrockFpsState.error = stderrText || 'presentmon_exited_without_samples';
+      emitBedrockFpsState();
+      closeBedrockFpsOverlayWindow();
+    });
 
     setTimeout(() => {
       if (!bedrockFpsState.enabled) return;
       if ((bedrockFpsState.samples || 0) > 0) return;
-      bedrockFpsState.error = 'no_fps_samples: запусти игру и проверь права';
+      bedrockFpsState.error = 'no_fps_samples: поток кадров не получен';
       emitBedrockFpsState();
     }, 5000);
 
