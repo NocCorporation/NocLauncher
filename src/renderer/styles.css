@@ -289,15 +289,15 @@ textarea.ta{
 .sbLogo{
   width: 36px;
   height: 36px;
-  border-radius: 12px;
+  border-radius: 11px;
   display: grid;
   place-items: center;
   font-weight: 1000;
-  font-size: 18px;
-  color: rgba(255,255,255,.92);
-  background:
-    radial-gradient(120% 120% at 30% 20%, rgba(47,191,84,.95), rgba(20,76,60,.95));
-  box-shadow: 0 14px 26px rgba(0,0,0,.45);
+  font-size: 19px;
+  color: rgba(255,255,255,.98);
+  background: linear-gradient(145deg, #b44dff 0%, #6b46ff 55%, #4b2ec2 100%);
+  border: 1px solid rgba(255,255,255,.26);
+  box-shadow: 0 10px 20px rgba(98,57,214,.42), inset 0 1px 0 rgba(255,255,255,.25);
 }
 .sbBrandTxt{ min-width: 0; }
 .sbName{ font-weight: 900; letter-spacing: .2px; }
@@ -569,7 +569,7 @@ textarea.ta{
 .heroBg{
   position: absolute;
   inset: 0;
-  background-image: url("img/hero-n-bright.svg");
+  background-image: image-set(url("img/hero-ui.png") 1x, url("img/hero.jpg") 2x);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
