@@ -1143,7 +1143,7 @@ function stopBedrockFpsMonitor() {
 
 async function startBedrockFpsMonitor() {
   if (process.platform !== 'win32') return { ok: false, error: 'windows_only' };
-  if (bedrockFpsMonitorProc && !bedrockFpsMonitorProc.killed) return { ok: true, already: true };
+  if (bedrockFpsState.enabled) return { ok: true, already: true };
 
   const pm = await ensurePresentMonBinary();
   if (!pm?.ok) {
@@ -1157,36 +1157,18 @@ async function startBedrockFpsMonitor() {
   openBedrockFpsOverlayWindow();
 
   try {
-    const base = ['--session_name', 'NocFPS', '--stop_existing_session', '--restart_as_admin'];
-    const argVariants = [
-      [...base, '--output_stdout'],
-      [...base, '-output_stdout'],
-      [...base, '--process_name', 'Minecraft.Windows.exe', '--output_stdout'],
-      [...base, '--process_name', 'MinecraftWindowsBeta.exe', '--output_stdout'],
-      [...base, '-process_name', 'Minecraft.Windows.exe', '-output_stdout'],
-      [...base, '-process_name', 'MinecraftWindowsBeta.exe', '-output_stdout']
-    ];
-
     const fpsDir = path.join(APP_ROOT, 'tools', 'presentmon');
     ensureDir(fpsDir);
     bedrockFpsCsvPath = path.join(fpsDir, 'noc-fps.csv');
     try { if (fs.existsSync(bedrockFpsCsvPath)) fs.unlinkSync(bedrockFpsCsvPath); } catch (_) {}
 
-    let proc = null;
-    let lastErr = '';
-    for (const args of argVariants) {
-      try {
-        const fullArgs = args.filter(a => a !== '--output_stdout' && a !== '-output_stdout');
-        fullArgs.push('--output_file', bedrockFpsCsvPath, '--no_console_stats', '--v1_metrics');
-        proc = childProcess.spawn(pm.exe, fullArgs, { windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'] });
-        if (proc?.pid) { lastErr = ''; break; }
-      } catch (e) {
-        lastErr = String(e?.message || e);
-      }
-    }
-    if (!proc) throw new Error(lastErr || 'presentmon_spawn_failed');
+    const argList = [
+      '--session_name','NocFPS','--stop_existing_session','--output_file', bedrockFpsCsvPath,
+      '--no_console_stats','--v1_metrics'
+    ].map(a => `'${String(a).replace(/'/g, "''")}'`).join(',');
+    const cmd = `$pm='${String(pm.exe).replace(/'/g,"''")}'; Start-Process -FilePath $pm -ArgumentList @(${argList}) -WindowStyle Hidden`;
+    childProcess.execFile('powershell', ['-NoProfile', '-WindowStyle', 'Hidden', '-Command', cmd], { windowsHide: true }, () => {});
 
-    bedrockFpsMonitorProc = proc;
     let csvLastSize = 0;
     let header = null;
     let msIdx = -1;
@@ -1204,10 +1186,7 @@ async function startBedrockFpsMonitor() {
       const parts = s.split(',').map(x => String(x || '').trim().replace(/^"|"$/g, ''));
       if (procIdx >= 0 && procIdx < parts.length) {
         const pn = String(parts[procIdx] || '').toLowerCase();
-        const okProc = pn.includes('minecraft.windows.exe')
-          || pn.includes('minecraftwindowsbeta.exe')
-          || pn.includes('javaw.exe')
-          || pn.includes('java.exe');
+        const okProc = pn.includes('minecraft.windows.exe') || pn.includes('minecraftwindowsbeta.exe') || pn.includes('javaw.exe') || pn.includes('java.exe');
         if (pn && !okProc) return;
       }
       if (msIdx < 0 || msIdx >= parts.length) return;
@@ -1230,46 +1209,23 @@ async function startBedrockFpsMonitor() {
         if (size <= csvLastSize) return;
         const buf = fs.readFileSync(bedrockFpsCsvPath, 'utf8');
         csvLastSize = size;
-        const lines = String(buf || '').split(/\r?\n/);
-        const tail = lines.slice(-220);
+        const lines = String(buf || '').split(/\r?\n/).filter(Boolean);
+        if (!lines.length) return;
+        if (!header) onLine(lines[0]);
+        const tail = lines.slice(Math.max(1, lines.length - 300));
         for (const ln of tail) onLine(ln);
       } catch (_) {}
     };
 
-    const hidePresentMonWindows = () => {
-      try {
-        const ps = "$sig='[DllImport(\"user32.dll\")] public static extern bool ShowWindowAsync(IntPtr hWnd,int nCmdShow);'; Add-Type -Namespace NOC -Name Win -MemberDefinition $sig -ErrorAction SilentlyContinue | Out-Null; Get-Process PresentMon -ErrorAction SilentlyContinue | ForEach-Object { if($_.MainWindowHandle -ne 0){ [NOC.Win]::ShowWindowAsync($_.MainWindowHandle,0) | Out-Null } }";
-        childProcess.execFile('powershell', ['-NoProfile', '-WindowStyle', 'Hidden', '-Command', ps], { windowsHide: true }, () => {});
-      } catch (_) {}
-    };
+    bedrockFpsMonitorTimer = setInterval(pollCsv, 500);
+    setTimeout(pollCsv, 600);
 
-    bedrockFpsMonitorTimer = setInterval(pollCsv, 700);
-    bedrockFpsHideTimer = setInterval(hidePresentMonWindows, 900);
-    setTimeout(pollCsv, 900);
-    setTimeout(hidePresentMonWindows, 300);
-
-    let stderrText = '';
-    proc.stderr?.on('data', (d) => {
-      const s = String(d || '').trim();
-      if (!s) return;
-      stderrText = `${stderrText}\n${s}`.slice(-1200);
-    });
-
-    proc.on('exit', () => {
-      bedrockFpsMonitorProc = null;
-      if (bedrockFpsState.enabled) {
-        bedrockFpsState.enabled = false;
-        const rawErr = String((stderrText || '').trim() || bedrockFpsState.error || 'presentmon_exited');
-        const low = rawErr.toLowerCase();
-        if (low.includes('access denied') || low.includes('requires elevated privilege') || low.includes('performance log users')) {
-          bedrockFpsState.error = 'presentmon_access_denied: запусти NocLauncher от имени администратора (или добавь пользователя в Performance Log Users)';
-        } else {
-          bedrockFpsState.error = rawErr;
-        }
-        emitBedrockFpsState();
-        closeBedrockFpsOverlayWindow();
-      }
-    });
+    setTimeout(() => {
+      if (!bedrockFpsState.enabled) return;
+      if ((bedrockFpsState.samples || 0) > 0) return;
+      bedrockFpsState.error = 'no_fps_samples: запусти игру и проверь права';
+      emitBedrockFpsState();
+    }, 5000);
 
     return { ok: true, backend: 'presentmon' };
   } catch (e) {
