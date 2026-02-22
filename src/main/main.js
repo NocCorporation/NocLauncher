@@ -1072,6 +1072,7 @@ function isBedrockRunning() {
 let bedrockFpsMonitorProc = null;
 let bedrockFpsMonitorBuf = '';
 let bedrockFpsMonitorTimer = null;
+let bedrockFpsHideTimer = null;
 let bedrockFpsCsvPath = '';
 let bedrockFpsState = {
   enabled: false,
@@ -1124,6 +1125,8 @@ async function ensurePresentMonBinary() {
 function stopBedrockFpsMonitor() {
   try { if (bedrockFpsMonitorTimer) clearTimeout(bedrockFpsMonitorTimer); } catch (_) {}
   bedrockFpsMonitorTimer = null;
+  try { if (bedrockFpsHideTimer) clearInterval(bedrockFpsHideTimer); } catch (_) {}
+  bedrockFpsHideTimer = null;
   try { if (bedrockFpsMonitorProc && !bedrockFpsMonitorProc.killed) bedrockFpsMonitorProc.kill(); } catch (_) {}
   bedrockFpsMonitorProc = null;
   try {
@@ -1229,8 +1232,17 @@ async function startBedrockFpsMonitor() {
       } catch (_) {}
     };
 
+    const hidePresentMonWindows = () => {
+      try {
+        const ps = "$sig='[DllImport(\"user32.dll\")] public static extern bool ShowWindowAsync(IntPtr hWnd,int nCmdShow);'; Add-Type -Namespace NOC -Name Win -MemberDefinition $sig -ErrorAction SilentlyContinue | Out-Null; Get-Process PresentMon -ErrorAction SilentlyContinue | ForEach-Object { if($_.MainWindowHandle -ne 0){ [NOC.Win]::ShowWindowAsync($_.MainWindowHandle,0) | Out-Null } }";
+        childProcess.execFile('powershell', ['-NoProfile', '-WindowStyle', 'Hidden', '-Command', ps], { windowsHide: true }, () => {});
+      } catch (_) {}
+    };
+
     bedrockFpsMonitorTimer = setInterval(pollCsv, 700);
+    bedrockFpsHideTimer = setInterval(hidePresentMonWindows, 900);
     setTimeout(pollCsv, 900);
+    setTimeout(hidePresentMonWindows, 300);
 
     let stderrText = '';
     proc.stderr?.on('data', (d) => {
