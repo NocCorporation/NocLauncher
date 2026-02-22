@@ -190,6 +190,24 @@
         }
       }catch(_){ }
     });
+
+    // Rotating promo/status lines during startup
+    (() => {
+      const el = document.getElementById('status');
+      if (!el) return;
+      const lines = [
+        'Лучший стабильный выбор, без вирусов и вреда для вашего компьютера.',
+        'Только у нас самые лучшие идеи для обновления лаунчера!',
+        'Следите за самыми новыми форками и релизами на нашем Github репозитории!',
+        'Решайте проблемы, ошибки и ищите новых друзей для игры в Telegram: @bundstraze!',
+        'Проверяйте файлы на вирусы, прежде чем устанавливать их через кнопку проверки на вирусы!'
+      ];
+      let i = 0;
+      setInterval(() => {
+        i = (i + 1) % lines.length;
+        el.textContent = lines[i];
+      }, 1900);
+    })();
   </script>
 </body>
 </html>

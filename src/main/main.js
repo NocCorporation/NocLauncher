@@ -744,7 +744,7 @@ function createWindow() {
 
   win.once('ready-to-show', () => {
     mainReady = true;
-    const minSplashMs = 5000;
+    const minSplashMs = 10000;
     const elapsed = splashShownAt ? (Date.now() - splashShownAt) : 0;
     const waitMs = Math.max(0, minSplashMs - elapsed);
 
