@@ -2552,6 +2552,13 @@ function wireUI() {
     }
   });
   $('#btnBedrockVirusCheck')?.addEventListener('click', () => openModal('modalBedrockVirus'));
+  $('#btnBedrockSkinsSite')?.addEventListener('click', async () => {
+    const url = 'https://www.minecraftskins.com/';
+    const r = await window.noc?.webOpen?.({ key: 'bedrock-skins', title: 'Minecraft Skins', url });
+    if (!r?.ok) {
+      try { await window.noc?.shellOpenExternal?.(url); } catch (_) {}
+    }
+  });
   $('#btnBedrockMsFix')?.addEventListener('click', async () => {
     setStatus('MS Fix: проверяю Microsoft/Xbox компоненты...');
     const d = await window.noc?.bedrockMicrosoftDiag?.();
