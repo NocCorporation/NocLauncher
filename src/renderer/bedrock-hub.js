@@ -289,6 +289,7 @@
       await setMiniMenuOpen(!miniMenuOpen);
       if (miniMenuOpen) await refreshMiniFpsState();
     });
+    $('#btnMiniClose')?.addEventListener('click', () => window.close());
     $('#btnMiniFps')?.addEventListener('click', async () => {
       const f = await window.noc?.bedrockFpsGet?.();
       const on = !!f?.enabled;

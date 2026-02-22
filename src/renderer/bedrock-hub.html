@@ -37,6 +37,8 @@
     .miniBtn{border:1px solid rgba(255,255,255,.18);background:linear-gradient(180deg,rgba(40,48,72,.92),rgba(24,30,45,.92));color:#fff;border-radius:12px;padding:8px 12px;font-weight:900;cursor:pointer;backdrop-filter:blur(6px);transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease}
     .miniBtn:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,.28);border-color:rgba(255,255,255,.28)}
     #btnMiniSettings{padding:8px 10px;min-width:40px}
+    #btnMiniClose{padding:8px 10px;min-width:40px;color:#ffdbdb;background:linear-gradient(180deg,rgba(78,34,42,.92),rgba(52,24,31,.92));border-color:rgba(255,120,120,.32)}
+    #btnMiniClose:hover{border-color:rgba(255,150,150,.5);box-shadow:0 6px 16px rgba(98,24,24,.35)}
     .miniMenu{display:none;position:fixed;top:56px;right:0;z-index:10000;background:linear-gradient(180deg,rgba(36,44,66,.94),rgba(20,25,38,.94));border:1px solid rgba(255,255,255,.20);border-radius:12px;padding:10px;width:100%;box-shadow:0 10px 26px rgba(0,0,0,.35);overflow:hidden;backdrop-filter:blur(8px);transform-origin:top right;transform:translateY(-6px) scale(.98);opacity:0;pointer-events:none;transition:transform .2s ease,opacity .2s ease}
     .miniMenuRow{display:flex;align-items:center;justify-content:space-between;gap:10px}
     .miniMenuTitle{font-size:13px;color:var(--muted);font-weight:800;white-space:nowrap;letter-spacing:.2px}
@@ -92,6 +94,7 @@
   <div class="miniDock" id="miniDock">
     <button class="miniBtn" id="btnExpand">Открыть панель</button>
     <button class="miniBtn" id="btnMiniSettings" title="Быстрые настройки" aria-label="Быстрые настройки">⚙</button>
+    <button class="miniBtn" id="btnMiniClose" title="Закрыть панель" aria-label="Закрыть панель">✕</button>
   </div>
   <div class="miniMenu" id="miniMenu" aria-label="Быстрые настройки Bedrock" role="dialog">
     <div class="miniMenuRow">
