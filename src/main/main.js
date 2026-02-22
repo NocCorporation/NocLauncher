@@ -994,13 +994,13 @@ function closeBedrockHubWindow() {
 function openBedrockFpsOverlayWindow() {
   try {
     if (bedrockFpsOverlayWin && !bedrockFpsOverlayWin.isDestroyed()) {
-      try { bedrockFpsOverlayWin.setSize(420, 86, true); } catch (_) {}
+      try { bedrockFpsOverlayWin.setSize(180, 54, true); } catch (_) {}
       bedrockFpsOverlayWin.showInactive();
       return;
     }
     bedrockFpsOverlayWin = new BrowserWindow({
-      width: 420,
-      height: 86,
+      width: 180,
+      height: 54,
       frame: false,
       transparent: true,
       resizable: false,

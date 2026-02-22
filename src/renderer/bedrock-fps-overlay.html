@@ -6,24 +6,16 @@
   <title>FPS Overlay</title>
   <style>
     html,body{margin:0;padding:0;background:transparent;overflow:hidden;font-family:Segoe UI,Arial,sans-serif}
-    .box{display:inline-flex;gap:10px;align-items:center;padding:8px 12px;border-radius:12px;background:rgba(8,10,14,.55);border:1px solid rgba(255,255,255,.18);color:#fff;font-weight:900;font-size:18px;backdrop-filter:blur(4px)}
-    .k{opacity:.8;font-weight:700;font-size:12px;letter-spacing:.04em}
-    .v{min-width:38px;text-align:right}
+    .box{display:inline-flex;gap:10px;align-items:center;padding:8px 12px;border-radius:12px;background:rgba(8,10,14,.55);border:1px solid rgba(255,255,255,.18);color:#fff;font-weight:900;font-size:22px;backdrop-filter:blur(4px)}
+    .v{min-width:50px;text-align:right}
   </style>
 </head>
 <body>
-  <div class="box" id="box">FPS <span class="v" id="fps">--</span> <span class="k">MIN</span><span class="v" id="min">--</span> <span class="k">MAX</span><span class="v" id="max">--</span></div>
-  <div id="dbg" style="margin-top:4px;color:#fff;font:12px/1.2 Segoe UI,Arial,sans-serif;text-shadow:0 1px 2px #000;opacity:.85">DBG: --</div>
+  <div class="box" id="box">FPS <span class="v" id="fps">--</span></div>
   <script>
     const fps = document.getElementById('fps');
-    const min = document.getElementById('min');
-    const max = document.getElementById('max');
-    const dbg = document.getElementById('dbg');
     window.noc?.onBedrockFps?.((d)=>{
       fps.textContent = (d?.current || '--');
-      min.textContent = (d?.min || '--');
-      max.textContent = (d?.max || '--');
-      if (dbg) dbg.textContent = 'DBG: ' + (d?.debug || d?.error || '--');
     });
   </script>
 </body>
