@@ -4763,23 +4763,33 @@ function resolveBedrockTreatmentsFile() {
 
   // 2) Legacy/alternate format: treatments/treatment_packs*/treatment_tags.json
   try {
-    const treatmentsRoot = path.join(path.dirname(p.minecraftpe), 'treatments');
-    if (fs.existsSync(treatmentsRoot)) {
+    const roots = [];
+    // a) Under current com.mojang root (some installs)
+    roots.push(path.join(path.dirname(p.minecraftpe), 'treatments'));
+    // b) Global roaming root (your case): %APPDATA%/Minecraft Bedrock/treatments
+    try {
+      const roaming = process.env.APPDATA;
+      if (roaming) roots.push(path.join(roaming, 'Minecraft Bedrock', 'treatments'));
+    } catch (_) {}
+
+    const candidates = [];
+    for (const treatmentsRoot of roots) {
+      if (!treatmentsRoot || !fs.existsSync(treatmentsRoot)) continue;
       const packs = fs.readdirSync(treatmentsRoot, { withFileTypes: true })
         .filter(d => d.isDirectory())
         .map(d => d.name)
         .filter(n => /^treatment_packs/i.test(n));
-      const candidates = [];
       for (const pack of packs) {
         const fp = path.join(treatmentsRoot, pack, 'treatment_tags.json');
         if (fs.existsSync(fp)) candidates.push(fp);
       }
-      if (candidates.length) {
-        candidates.sort((a, b) => {
-          try { return (fs.statSync(b).mtimeMs || 0) - (fs.statSync(a).mtimeMs || 0); } catch (_) { return 0; }
-        });
-        return candidates[0];
-      }
+    }
+
+    if (candidates.length) {
+      candidates.sort((a, b) => {
+        try { return (fs.statSync(b).mtimeMs || 0) - (fs.statSync(a).mtimeMs || 0); } catch (_) { return 0; }
+      });
+      return candidates[0];
     }
   } catch (_) {}
 
