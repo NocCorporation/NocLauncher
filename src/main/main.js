@@ -992,38 +992,8 @@ function closeBedrockHubWindow() {
 }
 
 function openBedrockFpsOverlayWindow() {
-  try {
-    if (bedrockFpsOverlayWin && !bedrockFpsOverlayWin.isDestroyed()) {
-      try { bedrockFpsOverlayWin.setSize(180, 54, true); } catch (_) {}
-      bedrockFpsOverlayWin.showInactive();
-      return;
-    }
-    bedrockFpsOverlayWin = new BrowserWindow({
-      width: 180,
-      height: 54,
-      frame: false,
-      transparent: true,
-      resizable: false,
-      alwaysOnTop: true,
-      skipTaskbar: true,
-      focusable: false,
-      hasShadow: false,
-      webPreferences: {
-        contextIsolation: true,
-        nodeIntegration: false,
-        preload: PRELOAD_PATH
-      }
-    });
-    try {
-      bedrockFpsOverlayWin.setAlwaysOnTop(true, 'screen-saver');
-      bedrockFpsOverlayWin.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-      bedrockFpsOverlayWin.setIgnoreMouseEvents(true, { forward: true });
-      const area = screen.getPrimaryDisplay().workArea;
-      bedrockFpsOverlayWin.setPosition(area.x + 12, area.y + 12);
-    } catch (_) {}
-    bedrockFpsOverlayWin.on('closed', () => { bedrockFpsOverlayWin = null; });
-    bedrockFpsOverlayWin.loadFile(path.join(RENDERER_DIR, 'bedrock-fps-overlay.html'), { query: { v: String(Date.now()) } });
-  } catch (_) {}
+  // Disabled: old in-launcher FPS panel removed in favor of external NocFpsCounter.exe
+  return;
 }
 
 function closeBedrockFpsOverlayWindow() {
@@ -1088,7 +1058,7 @@ function emitBedrockFpsState() {
   const payload = { ...bedrockFpsState, ts: Date.now() };
   try { if (win && !win.isDestroyed()) win.webContents.send('bedrock:fps', payload); } catch (_) {}
   try { if (bedrockHubWin && !bedrockHubWin.isDestroyed()) bedrockHubWin.webContents.send('bedrock:fps', payload); } catch (_) {}
-  try { if (bedrockFpsOverlayWin && !bedrockFpsOverlayWin.isDestroyed()) bedrockFpsOverlayWin.webContents.send('bedrock:fps', payload); } catch (_) {}
+  // Legacy in-launcher FPS overlay window updates removed.
 }
 
 function resolveBedrockFpsCounterBinary() {
