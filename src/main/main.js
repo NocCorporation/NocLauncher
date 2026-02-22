@@ -1190,14 +1190,13 @@ async function startBedrockFpsMonitor() {
       '--no_console_stats','--v1_metrics'
     ];
 
-    // Spawn directly hidden (no powershell/start-process wrapper).
-    const proc = childProcess.spawn(pm.exe, args, { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+    // File-only mode + hidden process: avoids stdout console spam.
+    const proc = childProcess.spawn(pm.exe, args, { windowsHide: true, stdio: ['ignore', 'ignore', 'ignore'] });
     bedrockFpsMonitorProc = proc;
 
     let header = null;
     let msIdx = -1;
     let procIdx = -1;
-    let stderrText = '';
 
     const tryParseHeader = (s) => {
       const cols = s.split(',').map(x => String(x || '').trim().toLowerCase().replace(/"/g, ''));
@@ -1211,50 +1210,23 @@ async function startBedrockFpsMonitor() {
       return true;
     };
 
-    const onLine = (line) => {
+    const parseLine = (line) => {
       const s = String(line || '').trim();
-      if (!s) return;
+      if (!s) return null;
       if (!header) {
-        if (!tryParseHeader(s)) return;
-        return;
+        if (!tryParseHeader(s)) return null;
+        return null;
       }
       const parts = s.split(',').map(x => String(x || '').trim().replace(/^"|"$/g, ''));
-      if (procIdx >= 0 && procIdx < parts.length) {
-        const pn = String(parts[procIdx] || '').toLowerCase();
-        const gameProc = pn.includes('minecraft.windows.exe') || pn.includes('minecraftwindowsbeta.exe') || pn.includes('javaw.exe') || pn.includes('java.exe');
-        const fallbackProc = pn.includes('dwm.exe');
-        if (pn && !gameProc && !fallbackProc) return;
-      }
-      if (msIdx < 0 || msIdx >= parts.length) return;
+      if (msIdx < 0 || msIdx >= parts.length) return null;
       const ms = Number(parts[msIdx]);
-      if (!Number.isFinite(ms) || ms <= 0) return;
+      if (!Number.isFinite(ms) || ms <= 0) return null;
       const fps = Math.max(1, Math.min(999, Math.round(1000 / ms)));
-      bedrockFpsState.current = fps;
-      bedrockFpsState.min = bedrockFpsState.min ? Math.min(bedrockFpsState.min, fps) : fps;
-      bedrockFpsState.max = Math.max(bedrockFpsState.max || 0, fps);
-      bedrockFpsState.samples = (bedrockFpsState.samples || 0) + 1;
-      bedrockFpsState.lastUpdateTs = Date.now();
-      bedrockFpsState.debug = `samples=${bedrockFpsState.samples} src=stream`;
-      emitBedrockFpsState();
+      const pn = (procIdx >= 0 && procIdx < parts.length) ? String(parts[procIdx] || '').toLowerCase() : '';
+      return { fps, proc: pn };
     };
 
-    proc.stdout?.on('data', (chunk) => {
-      bedrockFpsMonitorBuf += String(chunk || '');
-      let i;
-      while ((i = bedrockFpsMonitorBuf.indexOf('\n')) >= 0) {
-        const ln = bedrockFpsMonitorBuf.slice(0, i);
-        bedrockFpsMonitorBuf = bedrockFpsMonitorBuf.slice(i + 1);
-        onLine(ln);
-      }
-    });
-
-    proc.stderr?.on('data', (d) => {
-      const s = String(d || '').trim();
-      if (!s) return;
-      stderrText = `${stderrText}\n${s}`.slice(-800);
-    });
-
-    const pollCsvFallback = () => {
+    const pollCsv = () => {
       try {
         if (!bedrockFpsCsvPath || !fs.existsSync(bedrockFpsCsvPath)) {
           bedrockFpsState.debug = 'csv_missing';
@@ -1263,17 +1235,52 @@ async function startBedrockFpsMonitor() {
         }
         const txt = fs.readFileSync(bedrockFpsCsvPath, 'utf8');
         const lines = String(txt || '').split(/\r?\n/).filter(Boolean);
-        if (!lines.length) { bedrockFpsState.debug = 'csv_empty'; emitBedrockFpsState(); return; }
+        if (!lines.length) {
+          bedrockFpsState.debug = 'csv_empty';
+          emitBedrockFpsState();
+          return;
+        }
         if (!header) tryParseHeader(lines[0]);
-        const tail = lines.slice(-120);
-        for (const ln of tail) onLine(ln);
-        if ((bedrockFpsState.samples || 0) === 0) {
+
+        const tail = lines.slice(-220);
+        let bestGame = null;
+        let bestDwm = null;
+
+        for (const ln of tail) {
+          const p = parseLine(ln);
+          if (!p) continue;
+          const procName = String(p.proc || '');
+          const isGame = procName.includes('minecraft.windows.exe') || procName.includes('minecraftwindowsbeta.exe') || procName.includes('javaw.exe') || procName.includes('java.exe');
+          const isDwm = procName.includes('dwm.exe') || !procName;
+          if (isGame) bestGame = p;
+          else if (isDwm) bestDwm = p;
+        }
+
+        const picked = bestGame || bestDwm;
+        if (!picked) {
           bedrockFpsState.debug = `csv_lines=${lines.length} no_samples`;
           emitBedrockFpsState();
+          return;
         }
-      } catch (_) {}
+
+        const fps = Number(picked.fps || 0);
+        if (fps > 0) {
+          bedrockFpsState.current = fps;
+          bedrockFpsState.min = bedrockFpsState.min ? Math.min(bedrockFpsState.min, fps) : fps;
+          bedrockFpsState.max = Math.max(bedrockFpsState.max || 0, fps);
+          bedrockFpsState.samples = (bedrockFpsState.samples || 0) + 1;
+          bedrockFpsState.lastUpdateTs = Date.now();
+          bedrockFpsState.debug = `samples=${bedrockFpsState.samples} src=csv ${bestGame ? 'game' : 'dwm'}`;
+          emitBedrockFpsState();
+        }
+      } catch (e) {
+        bedrockFpsState.debug = `csv_err:${String(e?.message || e)}`;
+        emitBedrockFpsState();
+      }
     };
-    bedrockFpsMonitorTimer = setInterval(pollCsvFallback, 700);
+
+    bedrockFpsMonitorTimer = setInterval(pollCsv, 700);
+    setTimeout(pollCsv, 800);
 
     proc.on('exit', () => {
       bedrockFpsMonitorProc = null;
@@ -1282,7 +1289,7 @@ async function startBedrockFpsMonitor() {
       if (!bedrockFpsState.enabled) return;
       if ((bedrockFpsState.samples || 0) > 0) return;
       bedrockFpsState.enabled = false;
-      bedrockFpsState.error = stderrText || 'presentmon_exited_without_samples';
+      bedrockFpsState.error = 'presentmon_exited_without_samples';
       emitBedrockFpsState();
     });
 
