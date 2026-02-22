@@ -4424,6 +4424,73 @@ ipcMain.handle('bedrock:microsoftQuickFix', async () => {
   }
 });
 
+ipcMain.handle('bedrock:xboxDiag', async () => {
+  if (process.platform !== 'win32') return { ok: false, error: 'windows_only' };
+  const hasPkg = async (name) => {
+    try {
+      const out = await runPowerShellAsync(`(Get-AppxPackage -Name ${name} | Select-Object -First 1 Name).Name`);
+      return !!String(out || '').trim();
+    } catch (_) { return false; }
+  };
+  const serviceState = async (name) => {
+    try {
+      const out = await runPowerShellAsync(`(Get-Service -Name '${name}' -ErrorAction SilentlyContinue).Status`);
+      return String(out || '').trim();
+    } catch (_) { return ''; }
+  };
+
+  try {
+    const svc = {
+      XboxGipSvc: await serviceState('XboxGipSvc'),
+      XblAuthManager: await serviceState('XblAuthManager'),
+      XblGameSave: await serviceState('XblGameSave'),
+      XboxNetApiSvc: await serviceState('XboxNetApiSvc')
+    };
+    return {
+      ok: true,
+      xboxAppInstalled: await hasPkg('Microsoft.GamingApp'),
+      xboxIdentityInstalled: await hasPkg('Microsoft.XboxIdentityProvider'),
+      gamingServicesInstalled: await hasPkg('Microsoft.GamingServices'),
+      services: svc,
+      servicesOk: Object.values(svc).every(v => ['Running', 'StartPending'].includes(String(v || '')))
+    };
+  } catch (e) {
+    return { ok: false, error: String(e?.message || e) };
+  }
+});
+
+ipcMain.handle('bedrock:xboxQuickFix', async () => {
+  if (process.platform !== 'win32') return { ok: false, error: 'windows_only' };
+  const steps = [];
+  const mark = (name, ok, error = '') => steps.push({ name, ok: !!ok, error: error ? String(error) : '' });
+
+  try {
+    try {
+      await runPowerShellAsync("Start-Service -Name XboxGipSvc -ErrorAction SilentlyContinue; Start-Service -Name XblAuthManager -ErrorAction SilentlyContinue; Start-Service -Name XblGameSave -ErrorAction SilentlyContinue; Start-Service -Name XboxNetApiSvc -ErrorAction SilentlyContinue; 'ok'");
+      mark('start_xbox_services', true);
+    } catch (e) { mark('start_xbox_services', false, e?.message || e); }
+
+    try {
+      await runPowerShellAsync("$ErrorActionPreference='SilentlyContinue'; Get-AppxPackage -Name Microsoft.GamingServices | Remove-AppxPackage; Start-Sleep -Seconds 1; Start-Process 'ms-windows-store://pdp/?productid=9MWPM2CQNLHN'; 'ok'");
+      mark('repair_gaming_services', true);
+    } catch (e) { mark('repair_gaming_services', false, e?.message || e); }
+
+    try {
+      await shell.openExternal('ms-windows-store://pdp/?productid=9MV0B5HZVK9Z');
+      mark('open_xbox_app_page', true);
+    } catch (e) { mark('open_xbox_app_page', false, e?.message || e); }
+
+    try {
+      await shell.openExternal('ms-settings:gaming-xboxnetworking');
+      mark('open_xbox_networking', true);
+    } catch (e) { mark('open_xbox_networking', false, e?.message || e); }
+
+    return { ok: true, steps };
+  } catch (e) {
+    return { ok: false, error: String(e?.message || e), steps };
+  }
+});
+
 ipcMain.handle('bedrock:managerStatus', async () => {
   if (process.platform !== 'win32') return { supported: false, installed: false };
   const p = getMcDownloaderPaths();

@@ -2580,6 +2580,32 @@ function wireUI() {
       setStatus(`MS Fix: частично выполнено — ${f?.error || 'unknown'}`);
     }
   });
+
+  $('#btnBedrockXboxFix')?.addEventListener('click', async () => {
+    setStatus('Xbox Fixer: проверяю Xbox компоненты...');
+    const d = await window.noc?.bedrockXboxDiag?.();
+    if (!d?.ok) {
+      setStatus(`Xbox Fixer: диагностика не удалась — ${d?.error || 'unknown'}`);
+      return;
+    }
+
+    const missing = [];
+    if (!d.xboxAppInstalled) missing.push('Xbox app');
+    if (!d.xboxIdentityInstalled) missing.push('Xbox Identity Provider');
+    if (!d.gamingServicesInstalled) missing.push('Gaming Services');
+    if (!d.servicesOk) missing.push('Xbox services');
+
+    setStatus(missing.length
+      ? `Xbox Fixer: найдены проблемы (${missing.join(', ')}). Запускаю фикс...`
+      : 'Xbox Fixer: критичных проблем не найдено, запускаю профилактический фикс...');
+
+    const f = await window.noc?.bedrockXboxQuickFix?.();
+    if (f?.ok) {
+      setStatus('Xbox Fixer: готово. Проверь Xbox Networking и перезапусти ПК.');
+    } else {
+      setStatus(`Xbox Fixer: частично выполнено — ${f?.error || 'unknown'}`);
+    }
+  });
   // Bedrock settings (graphics/options)
   const openBedrockSettings = async () => {
     await renderBedrockOptions();
