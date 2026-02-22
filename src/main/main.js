@@ -673,6 +673,24 @@ function getRingText() {
   return mcRing.join('');
 }
 
+function tsIso() {
+  return new Date().toISOString();
+}
+
+function appendBedrockLaunchLog(line) {
+  try {
+    const settings = store?.store || {};
+    const gameDir = resolveActiveGameDir(settings);
+    const logDir = path.join(gameDir, 'launcher_logs');
+    fs.mkdirSync(logDir, { recursive: true });
+    const logPath = path.join(logDir, 'latest-bedrock.txt');
+    fs.appendFileSync(logPath, `[${tsIso()}] ${line}${os.EOL}`, 'utf8');
+    return logPath;
+  } catch (_) {
+    return null;
+  }
+}
+
 // Aggregated install progress (across libs/assets/natives)
 let aggProgress = { totals: {}, currents: {}, lastSent: 0 };
 function resetAggProgress() { aggProgress = { totals: {}, currents: {}, lastSent: 0 }; }
@@ -4320,21 +4338,59 @@ ipcMain.handle('bedrock:launch', async () => {
     return { ok: false, error: 'Bedrock mode поддерживается только на Windows.' };
   }
 
+  let bedrockLogPath = null;
   try {
+    bedrockLogPath = appendBedrockLaunchLog('INFO: Bedrock launch requested');
+
     // Try to add server entry first (harmless if already present)
     await ensureBedrockServerLink();
+    appendBedrockLaunchLog('INFO: ensureBedrockServerLink done');
 
     // Hide launcher immediately, then launch Bedrock
     hideLauncherForGame();
+    appendBedrockLaunchLog('INFO: launching minecraft://');
     await shell.openExternal('minecraft://');
+
+    // Verify process really started; if not, try fallback app launch once.
+    let started = false;
+    for (let i = 0; i < 10; i++) {
+      await new Promise(r => setTimeout(r, 700));
+      if (isBedrockRunning()) { started = true; break; }
+    }
+
+    if (!started) {
+      appendBedrockLaunchLog('WARN: Minecraft.Windows.exe not detected after minecraft://, trying shell:AppsFolder fallback');
+      try {
+        await execFileAsync('cmd', ['/c', 'start', '', 'shell:AppsFolder\\Microsoft.MinecraftUWP_8wekyb3d8bbwe!App'], { windowsHide: true });
+      } catch (e2) {
+        appendBedrockLaunchLog(`WARN: AppsFolder fallback failed: ${String(e2?.message || e2)}`);
+      }
+      for (let i = 0; i < 8; i++) {
+        await new Promise(r => setTimeout(r, 700));
+        if (isBedrockRunning()) { started = true; break; }
+      }
+    }
+
+    if (!started) {
+      appendBedrockLaunchLog('ERROR: Bedrock still not running after retries; suggest MS Fix/Xbox Fixer');
+      restoreLauncherAfterGame();
+      return {
+        ok: false,
+        error: `Bedrock не запустился. Открой MS Fix/Xbox Fixer и проверь launcher_logs/latest-bedrock.txt`,
+        logPath: bedrockLogPath || ''
+      };
+    }
+
+    appendBedrockLaunchLog('INFO: Bedrock process detected, launch OK');
     watchBedrockAndRestore();
     ensureAutoLocalHostWatcher();
     // Show Omlet-like local servers hub window alongside Bedrock session
     setTimeout(() => { try { openBedrockHubWindow(); } catch (_) {} }, 900);
-    return { ok: true };
+    return { ok: true, logPath: bedrockLogPath || '' };
   } catch (e) {
+    appendBedrockLaunchLog(`ERROR: ${String(e?.message || e)}`);
     restoreLauncherAfterGame();
-    return { ok: false, error: String(e?.message || e) };
+    return { ok: false, error: String(e?.message || e), logPath: bedrockLogPath || '' };
   }
 });
 
