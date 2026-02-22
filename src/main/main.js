@@ -994,12 +994,13 @@ function closeBedrockHubWindow() {
 function openBedrockFpsOverlayWindow() {
   try {
     if (bedrockFpsOverlayWin && !bedrockFpsOverlayWin.isDestroyed()) {
+      try { bedrockFpsOverlayWin.setSize(420, 86, true); } catch (_) {}
       bedrockFpsOverlayWin.showInactive();
       return;
     }
     bedrockFpsOverlayWin = new BrowserWindow({
-      width: 360,
-      height: 54,
+      width: 420,
+      height: 86,
       frame: false,
       transparent: true,
       resizable: false,
@@ -1021,7 +1022,7 @@ function openBedrockFpsOverlayWindow() {
       bedrockFpsOverlayWin.setPosition(area.x + 12, area.y + 12);
     } catch (_) {}
     bedrockFpsOverlayWin.on('closed', () => { bedrockFpsOverlayWin = null; });
-    bedrockFpsOverlayWin.loadFile(path.join(RENDERER_DIR, 'bedrock-fps-overlay.html'));
+    bedrockFpsOverlayWin.loadFile(path.join(RENDERER_DIR, 'bedrock-fps-overlay.html'), { query: { v: String(Date.now()) } });
   } catch (_) {}
 }
 
@@ -1185,7 +1186,7 @@ async function startBedrockFpsMonitor() {
 
     const args = [
       '--session_name','NocFPS','--stop_existing_session',
-      '--output_stdout','--output_file', bedrockFpsCsvPath,
+      '--output_file', bedrockFpsCsvPath,
       '--no_console_stats','--v1_metrics'
     ];
 
@@ -1262,13 +1263,17 @@ async function startBedrockFpsMonitor() {
         }
         const txt = fs.readFileSync(bedrockFpsCsvPath, 'utf8');
         const lines = String(txt || '').split(/\r?\n/).filter(Boolean);
-        if (!lines.length) return;
+        if (!lines.length) { bedrockFpsState.debug = 'csv_empty'; emitBedrockFpsState(); return; }
         if (!header) tryParseHeader(lines[0]);
         const tail = lines.slice(-120);
         for (const ln of tail) onLine(ln);
+        if ((bedrockFpsState.samples || 0) === 0) {
+          bedrockFpsState.debug = `csv_lines=${lines.length} no_samples`;
+          emitBedrockFpsState();
+        }
       } catch (_) {}
     };
-    bedrockFpsMonitorTimer = setInterval(pollCsvFallback, 1200);
+    bedrockFpsMonitorTimer = setInterval(pollCsvFallback, 700);
 
     proc.on('exit', () => {
       bedrockFpsMonitorProc = null;
