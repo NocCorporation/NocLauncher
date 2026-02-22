@@ -1163,11 +1163,25 @@ async function startBedrockFpsMonitor() {
     try { if (fs.existsSync(bedrockFpsCsvPath)) fs.unlinkSync(bedrockFpsCsvPath); } catch (_) {}
 
     const argList = [
-      '--session_name','NocFPS','--stop_existing_session','--output_file', bedrockFpsCsvPath,
-      '--no_console_stats','--v1_metrics'
+      '--session_name','NocFPS','--stop_existing_session',
+      '--process_name','Minecraft.Windows.exe','--process_name','MinecraftWindowsBeta.exe','--process_name','javaw.exe','--process_name','java.exe',
+      '--output_file', bedrockFpsCsvPath,
+      '--no_console_stats','--v1_metrics','--terminate_on_proc_exit'
     ].map(a => `'${String(a).replace(/'/g, "''")}'`).join(',');
     const cmd = `$pm='${String(pm.exe).replace(/'/g,"''")}'; Start-Process -FilePath $pm -ArgumentList @(${argList}) -WindowStyle Hidden`;
     childProcess.execFile('powershell', ['-NoProfile', '-WindowStyle', 'Hidden', '-Command', cmd], { windowsHide: true }, () => {});
+
+    // Aggressive hide for first seconds (if any console flashes).
+    const hidePs = "$sig='[DllImport(\"user32.dll\")] public static extern bool ShowWindowAsync(IntPtr hWnd,int nCmdShow);'; Add-Type -Namespace NOC -Name Win -MemberDefinition $sig -ErrorAction SilentlyContinue | Out-Null; Get-Process PresentMon,conhost,cmd -ErrorAction SilentlyContinue | ForEach-Object { if($_.MainWindowHandle -ne 0){ [NOC.Win]::ShowWindowAsync($_.MainWindowHandle,0) | Out-Null } }";
+    let hideTicks = 0;
+    bedrockFpsHideTimer = setInterval(() => {
+      hideTicks++;
+      try { childProcess.execFile('powershell', ['-NoProfile', '-WindowStyle', 'Hidden', '-Command', hidePs], { windowsHide: true }, () => {}); } catch (_) {}
+      if (hideTicks >= 30) {
+        try { clearInterval(bedrockFpsHideTimer); } catch (_) {}
+        bedrockFpsHideTimer = null;
+      }
+    }, 120);
 
     let csvLastSize = 0;
     let header = null;
@@ -1217,8 +1231,8 @@ async function startBedrockFpsMonitor() {
       } catch (_) {}
     };
 
-    bedrockFpsMonitorTimer = setInterval(pollCsv, 500);
-    setTimeout(pollCsv, 600);
+    bedrockFpsMonitorTimer = setInterval(pollCsv, 900);
+    setTimeout(pollCsv, 900);
 
     setTimeout(() => {
       if (!bedrockFpsState.enabled) return;
