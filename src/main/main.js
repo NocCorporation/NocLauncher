@@ -1171,6 +1171,8 @@ async function startBedrockFpsMonitor() {
 
   try {
     const argVariants = [
+      ['--output_stdout'],
+      ['-output_stdout'],
       ['--process_name', 'Minecraft.Windows.exe', '--output_stdout'],
       ['--process_name', 'MinecraftWindowsBeta.exe', '--output_stdout'],
       ['-process_name', 'Minecraft.Windows.exe', '-output_stdout'],
@@ -1192,16 +1194,22 @@ async function startBedrockFpsMonitor() {
     bedrockFpsMonitorProc = proc;
     let header = null;
     let msIdx = -1;
+    let procIdx = -1;
 
     const onLine = (line) => {
       const s = String(line || '').trim();
       if (!s) return;
       if (!header) {
-        header = s.split(',').map(x => String(x || '').trim().toLowerCase());
+        header = s.split(',').map(x => String(x || '').trim().toLowerCase().replace(/"/g, ''));
         msIdx = header.findIndex(h => h === 'msbetweenpresents' || h === 'ms between presents');
+        procIdx = header.findIndex(h => h === 'processname' || h === 'process_name' || h === 'exename');
         return;
       }
-      const parts = s.split(',');
+      const parts = s.split(',').map(x => String(x || '').trim().replace(/^"|"$/g, ''));
+      if (procIdx >= 0 && procIdx < parts.length) {
+        const pn = String(parts[procIdx] || '').toLowerCase();
+        if (pn && !pn.includes('minecraft.windows.exe') && !pn.includes('minecraftwindowsbeta.exe')) return;
+      }
       if (msIdx < 0 || msIdx >= parts.length) return;
       const ms = Number(parts[msIdx]);
       if (!Number.isFinite(ms) || ms <= 0) return;
