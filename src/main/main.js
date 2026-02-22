@@ -1204,7 +1204,11 @@ async function startBedrockFpsMonitor() {
       const parts = s.split(',').map(x => String(x || '').trim().replace(/^"|"$/g, ''));
       if (procIdx >= 0 && procIdx < parts.length) {
         const pn = String(parts[procIdx] || '').toLowerCase();
-        if (pn && !pn.includes('minecraft.windows.exe') && !pn.includes('minecraftwindowsbeta.exe')) return;
+        const okProc = pn.includes('minecraft.windows.exe')
+          || pn.includes('minecraftwindowsbeta.exe')
+          || pn.includes('javaw.exe')
+          || pn.includes('java.exe');
+        if (pn && !okProc) return;
       }
       if (msIdx < 0 || msIdx >= parts.length) return;
       const ms = Number(parts[msIdx]);
