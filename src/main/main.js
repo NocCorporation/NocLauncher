@@ -4728,6 +4728,42 @@ ipcMain.handle('bedrock:xboxQuickFix', async () => {
   }
 });
 
+ipcMain.handle('bedrock:storeDeepFix', async () => {
+  if (process.platform !== 'win32') return { ok: false, error: 'windows_only' };
+  const steps = [];
+  const mark = (name, ok, error = '') => steps.push({ name, ok: !!ok, error: error ? String(error) : '' });
+  try {
+    try {
+      await runPowerShellAsync("$ErrorActionPreference='SilentlyContinue'; Get-AppxPackage -AllUsers Microsoft.StorePurchaseApp | ForEach-Object { Add-AppxPackage -DisableDevelopmentMode -Register ($_.InstallLocation + '\\AppxManifest.xml') }; 'ok'");
+      mark('reregister_store_purchase_app', true);
+    } catch (e) { mark('reregister_store_purchase_app', false, e?.message || e); }
+
+    try {
+      await runPowerShellAsync("$ErrorActionPreference='SilentlyContinue'; Get-AppxPackage -AllUsers Microsoft.WindowsStore | ForEach-Object { Add-AppxPackage -DisableDevelopmentMode -Register ($_.InstallLocation + '\\AppxManifest.xml') }; 'ok'");
+      mark('reregister_windows_store', true);
+    } catch (e) { mark('reregister_windows_store', false, e?.message || e); }
+
+    try {
+      await runPowerShellAsync("$ErrorActionPreference='SilentlyContinue'; Get-AppxPackage -AllUsers Microsoft.GamingServices | Remove-AppxPackage -AllUsers; Start-Sleep -Seconds 1; Start-Process 'ms-windows-store://pdp/?productid=9MWPM2CQNLHN'; 'ok'");
+      mark('reinstall_gaming_services', true);
+    } catch (e) { mark('reinstall_gaming_services', false, e?.message || e); }
+
+    try {
+      await execFileAsync('cmd', ['/c', 'start', '', '/b', 'wsreset.exe'], { windowsHide: true });
+      mark('wsreset', true);
+    } catch (e) { mark('wsreset', false, e?.message || e); }
+
+    try {
+      await shell.openExternal('ms-windows-store://downloadsandupdates');
+      mark('open_store_updates', true);
+    } catch (e) { mark('open_store_updates', false, e?.message || e); }
+
+    return { ok: true, steps, note: 'Глубокий ремонт Store завершён. Нажми Получить обновления и перезагрузи ПК.' };
+  } catch (e) {
+    return { ok: false, error: String(e?.message || e), steps };
+  }
+});
+
 ipcMain.handle('bedrock:rebootNow', async () => {
   if (process.platform !== 'win32') return { ok: false, error: 'windows_only' };
   try {

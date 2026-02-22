@@ -2615,6 +2615,21 @@ function wireUI() {
     setStatus('MS Fix: авто-фикс завершён');
   });
 
+  $('#btnMsFixStoreDeep')?.addEventListener('click', async () => {
+    setStatus('MS Fix: выполняю глубокий ремонт Store...');
+    const r = await window.noc?.bedrockStoreDeepFix?.();
+    if (!r?.ok) {
+      msFixLog(`Глубокий ремонт Store: ошибка — ${r?.error || 'unknown'}`);
+      setStatus('MS Fix: глубокий ремонт Store не удался');
+      return;
+    }
+    for (const s of (r.steps || [])) {
+      msFixLog(`${s.ok ? '✅' : '⚠️'} ${s.name}${s.error ? ` — ${s.error}` : ''}`);
+    }
+    msFixLog(r?.note || 'Глубокий ремонт Store завершён.');
+    setStatus('MS Fix: глубокий ремонт Store завершён');
+  });
+
   $('#btnMsFixStoreUpdates')?.addEventListener('click', async () => { await window.noc?.shellOpenExternal?.('ms-windows-store://downloadsandupdates'); msFixLog('Открыт Store: Обновления.'); });
   $('#btnMsFixXboxApp')?.addEventListener('click', async () => { await window.noc?.shellOpenExternal?.('ms-windows-store://pdp/?productid=9MV0B5HZVK9Z'); msFixLog('Открыта страница Xbox app в Store.'); });
   $('#btnMsFixGamingServices')?.addEventListener('click', async () => { await window.noc?.shellOpenExternal?.('ms-windows-store://pdp/?productid=9MWPM2CQNLHN'); msFixLog('Открыта страница Gaming Services в Store.'); });
