@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog, shell, Menu, screen } = require('electron');
 const path = require('path');
 const APP_ROOT = path.resolve(__dirname, '..', '..');
+const RUNTIME_TOOLS_DIR = app.isPackaged ? path.join(process.resourcesPath, 'tools') : path.join(APP_ROOT, 'tools');
 const ASSETS_DIR = path.join(APP_ROOT, 'assets');
 const RENDERER_DIR = path.join(APP_ROOT, 'src', 'renderer');
 const PRELOAD_PATH = path.join(APP_ROOT, 'src', 'preload', 'preload.js');
@@ -1063,9 +1064,10 @@ function emitBedrockFpsState() {
 
 function resolveBedrockFpsCounterBinary() {
   const candidates = [
-    path.join(APP_ROOT, 'tools', 'fps-counter', 'NocFpsCounter.exe'),
-    path.join(APP_ROOT, 'tools', 'fps-counter', 'FpsOverlay.exe'),
-    path.join(APP_ROOT, 'tools', 'FpsOverlay.exe')
+    path.join(RUNTIME_TOOLS_DIR, 'fps-counter', 'NocFpsCounter.exe'),
+    path.join(RUNTIME_TOOLS_DIR, 'fps-counter', 'FpsOverlay.exe'),
+    path.join(RUNTIME_TOOLS_DIR, 'FpsOverlay.exe'),
+    path.join(APP_ROOT, 'tools', 'fps-counter', 'NocFpsCounter.exe')
   ];
   for (const p of candidates) {
     try { if (fs.existsSync(p)) return p; } catch (_) {}

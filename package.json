@@ -45,6 +45,15 @@
       "node_modules/**/*",
       "package.json"
     ],
+    "extraResources": [
+      {
+        "from": "tools/fps-counter",
+        "to": "tools/fps-counter",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
     "win": {
       "target": "nsis",
       "icon": "assets/icon.png"
