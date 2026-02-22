@@ -1245,10 +1245,12 @@ async function startBedrockFpsMonitor() {
         const tail = lines.slice(-220);
         let bestGame = null;
         let bestDwm = null;
+        let bestAny = null;
 
         for (const ln of tail) {
           const p = parseLine(ln);
           if (!p) continue;
+          bestAny = p;
           const procName = String(p.proc || '');
           const isGame = procName.includes('minecraft.windows.exe') || procName.includes('minecraftwindowsbeta.exe') || procName.includes('javaw.exe') || procName.includes('java.exe');
           const isDwm = procName.includes('dwm.exe') || !procName;
@@ -1256,7 +1258,7 @@ async function startBedrockFpsMonitor() {
           else if (isDwm) bestDwm = p;
         }
 
-        const picked = bestGame || bestDwm;
+        const picked = bestGame || bestDwm || bestAny;
         if (!picked) {
           bedrockFpsState.debug = `csv_lines=${lines.length} no_samples`;
           emitBedrockFpsState();
