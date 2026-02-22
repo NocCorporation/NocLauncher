@@ -1071,6 +1071,7 @@ function isBedrockRunning() {
 }
 
 let bedrockFpsMonitorProc = null;
+let bedrockFpsHelperProc = null;
 let bedrockFpsMonitorBuf = '';
 let bedrockFpsMonitorTimer = null;
 let bedrockFpsHideTimer = null;
@@ -1147,6 +1148,8 @@ function stopBedrockFpsMonitor() {
   bedrockFpsMonitorTimer = null;
   try { if (bedrockFpsHideTimer) clearInterval(bedrockFpsHideTimer); } catch (_) {}
   bedrockFpsHideTimer = null;
+  try { if (bedrockFpsHelperProc && !bedrockFpsHelperProc.killed) bedrockFpsHelperProc.kill(); } catch (_) {}
+  bedrockFpsHelperProc = null;
   try { if (bedrockFpsMonitorProc && !bedrockFpsMonitorProc.killed) bedrockFpsMonitorProc.kill(); } catch (_) {}
   bedrockFpsMonitorProc = null;
   try {
@@ -1165,8 +1168,6 @@ async function startBedrockFpsMonitor() {
   if (process.platform !== 'win32') return { ok: false, error: 'windows_only' };
   if (bedrockFpsState.enabled) return { ok: true, already: true };
 
-  // Do not force UAC/group changes here to avoid intrusive popups/console side effects.
-
   const pm = await ensurePresentMonBinary();
   if (!pm?.ok) {
     bedrockFpsState = { ...bedrockFpsState, enabled: false, available: false, backend: 'none', error: pm?.error || 'presentmon_unavailable' };
@@ -1174,7 +1175,14 @@ async function startBedrockFpsMonitor() {
     return { ok: false, error: bedrockFpsState.error };
   }
 
-  bedrockFpsState = { enabled: true, backend: 'presentmon', available: true, current: 0, min: 0, max: 0, samples: 0, lastUpdateTs: 0, error: '', debug: 'starting' };
+  const helperPath = path.join(APP_ROOT, 'src', 'main', 'helpers', 'fps-helper.js');
+  if (!fs.existsSync(helperPath)) {
+    bedrockFpsState = { ...bedrockFpsState, enabled: false, available: false, backend: 'none', error: 'fps_helper_missing' };
+    emitBedrockFpsState();
+    return { ok: false, error: bedrockFpsState.error };
+  }
+
+  bedrockFpsState = { enabled: true, backend: 'helper', available: true, current: 0, min: 0, max: 0, samples: 0, lastUpdateTs: 0, error: '', debug: 'helper_starting' };
   emitBedrockFpsState();
   openBedrockFpsOverlayWindow();
 
@@ -1182,139 +1190,61 @@ async function startBedrockFpsMonitor() {
     const fpsDir = path.join(APP_ROOT, 'tools', 'presentmon');
     ensureDir(fpsDir);
     bedrockFpsCsvPath = path.join(fpsDir, 'noc-fps.csv');
-    try { if (fs.existsSync(bedrockFpsCsvPath)) fs.unlinkSync(bedrockFpsCsvPath); } catch (_) {}
 
-    const args = [
-      '--session_name','NocFPS','--stop_existing_session',
-      '--output_file', bedrockFpsCsvPath,
-      '--no_console_stats','--v1_metrics'
-    ];
+    const hp = childProcess.spawn(process.execPath, [helperPath, '--pm', pm.exe, '--csv', bedrockFpsCsvPath], {
+      windowsHide: true,
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+    bedrockFpsHelperProc = hp;
 
-    // File-only mode + hidden process: avoids stdout console spam.
-    const proc = childProcess.spawn(pm.exe, args, { windowsHide: true, stdio: ['ignore', 'ignore', 'ignore'] });
-    bedrockFpsMonitorProc = proc;
-
-    let header = null;
-    let msIdx = -1;
-    let procIdx = -1;
-
-    const tryParseHeader = (s) => {
-      const cols = s.split(',').map(x => String(x || '').trim().toLowerCase().replace(/"/g, ''));
-      const ms = cols.findIndex(h => h === 'msbetweenpresents' || h === 'ms between presents');
-      if (ms < 0) return false;
-      header = cols;
-      msIdx = ms;
-      procIdx = cols.findIndex(h => h === 'processname' || h === 'process_name' || h === 'exename' || h === 'application');
-      bedrockFpsState.debug = `header_ok msIdx=${msIdx} procIdx=${procIdx}`;
-      emitBedrockFpsState();
-      return true;
-    };
-
-    const parseLine = (line) => {
-      const s = String(line || '').trim();
-      if (!s) return null;
-      if (!header) {
-        if (!tryParseHeader(s)) return null;
-        return null;
+    let buf = '';
+    hp.stdout?.on('data', (d) => {
+      buf += String(d || '');
+      let i;
+      while ((i = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, i).trim();
+        buf = buf.slice(i + 1);
+        if (!line) continue;
+        let msg = null;
+        try { msg = JSON.parse(line); } catch (_) { continue; }
+        if (msg?.type === 'fps') {
+          const fps = Number(msg.current || 0);
+          if (fps > 0) {
+            bedrockFpsState.current = fps;
+            bedrockFpsState.min = bedrockFpsState.min ? Math.min(bedrockFpsState.min, fps) : fps;
+            bedrockFpsState.max = Math.max(bedrockFpsState.max || 0, fps);
+            bedrockFpsState.samples = (bedrockFpsState.samples || 0) + 1;
+            bedrockFpsState.lastUpdateTs = Date.now();
+            bedrockFpsState.debug = `helper samples=${bedrockFpsState.samples} src=${msg.source || 'n/a'}`;
+            emitBedrockFpsState();
+          }
+        } else if (msg?.type === 'debug') {
+          bedrockFpsState.debug = String(msg.message || '').slice(0, 180);
+          emitBedrockFpsState();
+        } else if (msg?.type === 'error') {
+          bedrockFpsState.error = String(msg.message || 'helper_error');
+          emitBedrockFpsState();
+        }
       }
-      const parts = s.split(',').map(x => String(x || '').trim().replace(/^"|"$/g, ''));
-      if (msIdx < 0 || msIdx >= parts.length) return null;
-      const ms = Number(parts[msIdx]);
-      if (!Number.isFinite(ms) || ms <= 0) return null;
-      const fps = Math.max(1, Math.min(999, Math.round(1000 / ms)));
-      const pn = (procIdx >= 0 && procIdx < parts.length) ? String(parts[procIdx] || '').toLowerCase() : '';
-      return { fps, proc: pn };
-    };
+    });
 
-    const pollCsv = () => {
-      try {
-        if (!bedrockFpsCsvPath || !fs.existsSync(bedrockFpsCsvPath)) {
-          bedrockFpsState.debug = 'csv_missing';
-          emitBedrockFpsState();
-          return;
-        }
-
-        const raw = fs.readFileSync(bedrockFpsCsvPath);
-        let txt = String(raw || '');
-        let lines = String(txt || '').split(/\r?\n/).filter(Boolean);
-
-        // Some PresentMon builds may write UTF-16LE CSV.
-        const h0 = String(lines[0] || '').toLowerCase();
-        if (!h0.includes('msbetweenpresents') && raw?.length > 2) {
-          try {
-            txt = raw.toString('utf16le');
-            lines = String(txt || '').split(/\r?\n/).filter(Boolean);
-          } catch (_) {}
-        }
-
-        if (!lines.length) {
-          bedrockFpsState.debug = 'csv_empty';
-          emitBedrockFpsState();
-          return;
-        }
-        if (!header) tryParseHeader(lines[0]);
-
-        const tail = lines.slice(-260);
-        let bestGame = null;
-        let bestDwm = null;
-        let bestAny = null;
-
-        for (const ln of tail) {
-          const p = parseLine(ln);
-          if (!p) continue;
-          bestAny = p;
-          const procName = String(p.proc || '');
-          const isGame = procName.includes('minecraft.windows.exe') || procName.includes('minecraftwindowsbeta.exe') || procName.includes('javaw.exe') || procName.includes('java.exe');
-          const isDwm = procName.includes('dwm.exe') || !procName;
-          if (isGame) bestGame = p;
-          else if (isDwm) bestDwm = p;
-        }
-
-        const picked = bestGame || bestDwm || bestAny;
-        if (!picked) {
-          bedrockFpsState.debug = `csv_lines=${lines.length} no_samples`;
-          emitBedrockFpsState();
-          return;
-        }
-
-        const fps = Number(picked.fps || 0);
-        if (fps > 0) {
-          bedrockFpsState.current = fps;
-          bedrockFpsState.min = bedrockFpsState.min ? Math.min(bedrockFpsState.min, fps) : fps;
-          bedrockFpsState.max = Math.max(bedrockFpsState.max || 0, fps);
-          bedrockFpsState.samples = (bedrockFpsState.samples || 0) + 1;
-          bedrockFpsState.lastUpdateTs = Date.now();
-          bedrockFpsState.debug = `samples=${bedrockFpsState.samples} src=csv ${bestGame ? 'game' : (bestDwm ? 'dwm' : 'any')}`;
-          emitBedrockFpsState();
-        }
-      } catch (e) {
-        bedrockFpsState.debug = `csv_err:${String(e?.message || e)}`;
-        emitBedrockFpsState();
-      }
-    };
-
-    bedrockFpsMonitorTimer = setInterval(pollCsv, 700);
-    setTimeout(pollCsv, 800);
-
-    proc.on('exit', () => {
-      bedrockFpsMonitorProc = null;
-      try { if (bedrockFpsMonitorTimer) clearInterval(bedrockFpsMonitorTimer); } catch (_) {}
-      bedrockFpsMonitorTimer = null;
-      if (!bedrockFpsState.enabled) return;
-      if ((bedrockFpsState.samples || 0) > 0) return;
-      bedrockFpsState.enabled = false;
-      bedrockFpsState.error = 'presentmon_exited_without_samples';
+    hp.stderr?.on('data', (d) => {
+      const s = String(d || '').trim();
+      if (!s) return;
+      bedrockFpsState.debug = `helper_stderr:${s.slice(0,120)}`;
       emitBedrockFpsState();
     });
 
-    setTimeout(() => {
+    hp.on('exit', () => {
+      bedrockFpsHelperProc = null;
       if (!bedrockFpsState.enabled) return;
       if ((bedrockFpsState.samples || 0) > 0) return;
-      bedrockFpsState.error = 'no_fps_samples: поток кадров не получен';
+      bedrockFpsState.enabled = false;
+      bedrockFpsState.error = 'helper_exited_without_samples';
       emitBedrockFpsState();
-    }, 5000);
+    });
 
-    return { ok: true, backend: 'presentmon' };
+    return { ok: true, backend: 'helper' };
   } catch (e) {
     bedrockFpsState = { ...bedrockFpsState, enabled: false, error: String(e?.message || e) };
     emitBedrockFpsState();
