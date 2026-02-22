@@ -133,6 +133,7 @@
                     <button class="chip chipSmall" id="btnBedrockAddons" type="button">Дополнения</button>
                     <button class="chip chipSmall" id="btnBedrockMsFix" type="button">MS Fix</button>
                     <button class="chip chipSmall" id="btnBedrockXboxFix" type="button">Xbox Fixer</button>
+                    <button class="chip chipSmall" id="btnBedrockVirusCheck" type="button">Проверка на вирусы</button>
                   </div>
                 </div>
 
@@ -472,6 +473,37 @@
       </div>
 
       <!-- Bedrock versions modal -->
+      <div class="modal hidden" id="modalBedrockVirus" role="dialog" aria-label="Проверка файлов на вирусы" aria-modal="true">
+        <div class="modalCard" style="max-width: 860px;">
+          <div class="modalHead">
+            <div class="modalTitle">Bedrock: проверка файлов на вирусы</div>
+            <button class="iconBtn" id="btnCloseBedrockVirus" type="button" aria-label="Закрыть">✕</button>
+          </div>
+          <div class="form">
+            <div class="help">Выбери сервис — откроется встроенное окно сайта, где можно загрузить файл и проверить его на угрозы.</div>
+
+            <div class="formRow"><div class="lbl">Лучшие</div></div>
+            <div class="hrow" style="gap:8px; flex-wrap:wrap;">
+              <button class="btn mini" data-virus-url="https://www.virustotal.com/gui/home/upload">VirusTotal</button>
+              <button class="btn mini" data-virus-url="https://opentip.kaspersky.com/">Kaspersky OpenTIP</button>
+              <button class="btn mini" data-virus-url="https://www.metadefender.com/#!/scan-file">MetaDefender Cloud</button>
+            </div>
+
+            <div class="formRow" style="margin-top:10px;"><div class="lbl">Средние</div></div>
+            <div class="hrow" style="gap:8px; flex-wrap:wrap;">
+              <button class="btn mini ghost" data-virus-url="https://www.fortiguard.com/virusscanner">FortiGuard Scanner</button>
+              <button class="btn mini ghost" data-virus-url="https://avcheck.net/">AVCheck</button>
+            </div>
+
+            <div class="formRow" style="margin-top:10px;"><div class="lbl">Обычные</div></div>
+            <div class="hrow" style="gap:8px; flex-wrap:wrap;">
+              <button class="btn mini ghost" data-virus-url="https://www.jotti.org/">Jotti Malware Scan</button>
+              <button class="btn mini ghost" data-virus-url="https://www.virscan.org/">VirSCAN</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="modal hidden" id="modalBedrockVersions" role="dialog" aria-label="Bedrock версии" aria-modal="true">
         <div class="modalCard">
           <div class="modalHead">

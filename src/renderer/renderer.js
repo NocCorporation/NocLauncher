@@ -2551,6 +2551,7 @@ function wireUI() {
       try { await window.noc?.shellOpenExternal?.(url); } catch (_) {}
     }
   });
+  $('#btnBedrockVirusCheck')?.addEventListener('click', () => openModal('modalBedrockVirus'));
   $('#btnBedrockMsFix')?.addEventListener('click', async () => {
     setStatus('MS Fix: проверяю Microsoft/Xbox компоненты...');
     const d = await window.noc?.bedrockMicrosoftDiag?.();
@@ -2614,6 +2615,18 @@ function wireUI() {
   $('#btnBedrockGfx')?.addEventListener('click', openBedrockSettings);
   $('#btnBedrockSettings')?.addEventListener('click', openBedrockSettings);
   $('#btnCloseBedrockContent')?.addEventListener('click', () => closeModal('modalBedrockContent'));
+
+  $('#btnCloseBedrockVirus')?.addEventListener('click', () => closeModal('modalBedrockVirus'));
+  $('#modalBedrockVirus')?.addEventListener('click', async (e) => {
+    const b = e.target?.closest?.('button[data-virus-url]');
+    if (!b) return;
+    const url = String(b.getAttribute('data-virus-url') || '').trim();
+    if (!url) return;
+    const r = await window.noc?.webOpen?.({ key: 'bedrock-virus-scan', title: 'Проверка на вирусы', url });
+    if (!r?.ok) {
+      try { await window.noc?.shellOpenExternal?.(url); } catch (_) {}
+    }
+  });
 
   $('#btnCloseBedrockSettings')?.addEventListener('click', () => closeModal('modalBedrockSettings'));
   $('#btnBrOptionsRefresh')?.addEventListener('click', async () => renderBedrockOptions());
@@ -3013,7 +3026,7 @@ function wireUI() {
   });
 
 
-  ['modalVersions', 'modalSettings', 'modalCrash', 'modalBedrockVersions', 'modalBedrockContent', 'modalProfiles', 'modalAuth'].forEach((id) => {
+  ['modalVersions', 'modalSettings', 'modalCrash', 'modalBedrockVersions', 'modalBedrockContent', 'modalBedrockVirus', 'modalProfiles', 'modalAuth'].forEach((id) => {
     const m = document.getElementById(id);
     if (!m) return;
     m.addEventListener('pointerdown', (e) => { if (e.target === m) closeModal(id); });
@@ -3025,6 +3038,7 @@ function wireUI() {
     if (!$('#modalSettings')?.classList.contains('hidden')) closeModal('modalSettings');
     if (!$('#modalCrash')?.classList.contains('hidden')) closeModal('modalCrash');
     if (!$('#modalBedrockVersions')?.classList.contains('hidden')) closeModal('modalBedrockVersions');
+    if (!$('#modalBedrockVirus')?.classList.contains('hidden')) closeModal('modalBedrockVirus');
     if (!$('#modalLocalServers')?.classList.contains('hidden')) closeModal('modalLocalServers');
     if (!$('#modalProfiles')?.classList.contains('hidden')) closeModal('modalProfiles');
     if (!$('#modalAuth')?.classList.contains('hidden')) closeModal('modalAuth');
