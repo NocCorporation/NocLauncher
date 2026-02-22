@@ -1233,8 +1233,20 @@ async function startBedrockFpsMonitor() {
           emitBedrockFpsState();
           return;
         }
-        const txt = fs.readFileSync(bedrockFpsCsvPath, 'utf8');
-        const lines = String(txt || '').split(/\r?\n/).filter(Boolean);
+
+        const raw = fs.readFileSync(bedrockFpsCsvPath);
+        let txt = String(raw || '');
+        let lines = String(txt || '').split(/\r?\n/).filter(Boolean);
+
+        // Some PresentMon builds may write UTF-16LE CSV.
+        const h0 = String(lines[0] || '').toLowerCase();
+        if (!h0.includes('msbetweenpresents') && raw?.length > 2) {
+          try {
+            txt = raw.toString('utf16le');
+            lines = String(txt || '').split(/\r?\n/).filter(Boolean);
+          } catch (_) {}
+        }
+
         if (!lines.length) {
           bedrockFpsState.debug = 'csv_empty';
           emitBedrockFpsState();
@@ -1242,7 +1254,7 @@ async function startBedrockFpsMonitor() {
         }
         if (!header) tryParseHeader(lines[0]);
 
-        const tail = lines.slice(-220);
+        const tail = lines.slice(-260);
         let bestGame = null;
         let bestDwm = null;
         let bestAny = null;
@@ -1272,7 +1284,7 @@ async function startBedrockFpsMonitor() {
           bedrockFpsState.max = Math.max(bedrockFpsState.max || 0, fps);
           bedrockFpsState.samples = (bedrockFpsState.samples || 0) + 1;
           bedrockFpsState.lastUpdateTs = Date.now();
-          bedrockFpsState.debug = `samples=${bedrockFpsState.samples} src=csv ${bestGame ? 'game' : 'dwm'}`;
+          bedrockFpsState.debug = `samples=${bedrockFpsState.samples} src=csv ${bestGame ? 'game' : (bestDwm ? 'dwm' : 'any')}`;
           emitBedrockFpsState();
         }
       } catch (e) {
