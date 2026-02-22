@@ -1047,101 +1047,32 @@ function emitBedrockFpsState() {
 }
 
 async function ensurePresentMonBinary() {
+  // Deterministic mode: no runtime downloads.
+  // We only use bundled/local binary paths to avoid "works/doesn't work" behavior.
   const toolsDir = path.join(APP_ROOT, 'tools', 'presentmon');
   ensureDir(toolsDir);
 
-  const findExe = () => {
+  const candidates = [
+    path.join(toolsDir, 'PresentMon.exe'),
+    path.join(toolsDir, 'presentmon.exe'),
+    path.join(APP_ROOT, 'bin', 'PresentMon.exe'),
+    path.join(APP_ROOT, 'assets', 'tools', 'PresentMon.exe')
+  ];
+
+  for (const p of candidates) {
     try {
-      const direct = fs.readdirSync(toolsDir).find(n => /presentmon.*\.exe$/i.test(String(n || '')));
-      if (direct) return path.join(toolsDir, direct);
+      if (p && fs.existsSync(p)) return { ok: true, exe: p, downloaded: false, source: 'bundled' };
     } catch (_) {}
-    try {
-      const walk = (dir) => {
-        const ents = fs.readdirSync(dir, { withFileTypes: true });
-        for (const e of ents) {
-          const fp = path.join(dir, e.name);
-          if (e.isFile() && /presentmon.*\.exe$/i.test(e.name)) return fp;
-          if (e.isDirectory()) {
-            const r = walk(fp);
-            if (r) return r;
-          }
-        }
-        return null;
-      };
-      return walk(toolsDir);
-    } catch (_) { return null; }
-  };
+  }
 
-  const downloadToFile = async (url, outPath, depth = 0) => {
-    if (!url || depth > 4) throw new Error('redirect_loop');
-    await new Promise((resolve, reject) => {
-      const h = url.startsWith('https://') ? https : http;
-      const req = h.get(url, { headers: { 'User-Agent': 'NocLauncher/1.0' } }, (res) => {
-        if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
-          try { res.resume(); } catch (_) {}
-          return downloadToFile(res.headers.location, outPath, depth + 1).then(resolve).catch(reject);
-        }
-        if ((res.statusCode || 0) >= 400) {
-          try { res.resume(); } catch (_) {}
-          return reject(new Error(`http_${res.statusCode}`));
-        }
-        const ws = fs.createWriteStream(outPath);
-        res.pipe(ws);
-        ws.on('finish', () => { try { ws.close(() => resolve()); } catch (_) { resolve(); } });
-        ws.on('error', reject);
-      });
-      req.on('error', reject);
-    });
-  };
-
-  const existing = findExe();
-  if (existing && fs.existsSync(existing)) return { ok: true, exe: existing, downloaded: false };
-
-  let assetUrls = [];
+  // Fallback: try system PATH if user installed PresentMon manually.
   try {
-    const rel = await new Promise((resolve, reject) => {
-      https.get('https://api.github.com/repos/GameTechDev/PresentMon/releases/latest', { headers: { 'User-Agent': 'NocLauncher/1.0' } }, (res) => {
-        if ((res.statusCode || 0) >= 400) { try { res.resume(); } catch (_) {} return reject(new Error(`http_${res.statusCode}`)); }
-        let buf = '';
-        res.on('data', (d) => { buf += d.toString('utf8'); });
-        res.on('end', () => resolve(buf));
-      }).on('error', reject);
-    });
-    const j = JSON.parse(String(rel || '{}'));
-    assetUrls = (Array.isArray(j?.assets) ? j.assets : [])
-      .map(a => String(a?.browser_download_url || ''))
-      .filter(u => /presentmon/i.test(u) && /(win|windows|x64)/i.test(u) && /\.(zip|exe)$/i.test(u));
+    const out = execFileSync('where', ['presentmon.exe'], { stdio: ['ignore', 'pipe', 'ignore'] }).toString('utf8');
+    const first = String(out || '').split(/\r?\n/).map(s => s.trim()).find(Boolean);
+    if (first && fs.existsSync(first)) return { ok: true, exe: first, downloaded: false, source: 'system' };
   } catch (_) {}
 
-  if (!assetUrls.length) {
-    assetUrls = [
-      'https://github.com/GameTechDev/PresentMon/releases/latest/download/PresentMon-2.2.0-win-x64.zip',
-      'https://github.com/GameTechDev/PresentMon/releases/latest/download/PresentMon-2.1.0-win-x64.zip',
-      'https://github.com/GameTechDev/PresentMon/releases/latest/download/PresentMon-1.9.0-x64.zip'
-    ];
-  }
-
-  for (const url of assetUrls) {
-    const ext = /\.exe$/i.test(url) ? 'exe' : 'zip';
-    const dlPath = path.join(toolsDir, `presentmon-${Date.now()}.${ext}`);
-    try {
-      await downloadToFile(url, dlPath);
-      if (ext === 'exe') {
-        const targetExe = path.join(toolsDir, 'PresentMon.exe');
-        try { fs.copyFileSync(dlPath, targetExe); } catch (_) {}
-      } else {
-        const z = new AdmZip(dlPath);
-        z.extractAllTo(toolsDir, true);
-      }
-      try { fs.unlinkSync(dlPath); } catch (_) {}
-      const exe = findExe();
-      if (exe && fs.existsSync(exe)) return { ok: true, exe, downloaded: true };
-    } catch (_) {
-      try { if (fs.existsSync(dlPath)) fs.unlinkSync(dlPath); } catch (_) {}
-    }
-  }
-
-  return { ok: false, error: 'presentmon_download_failed' };
+  return { ok: false, error: 'presentmon_not_bundled' };
 }
 
 function stopBedrockFpsMonitor() {

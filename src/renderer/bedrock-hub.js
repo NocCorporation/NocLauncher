@@ -300,7 +300,11 @@
       const r = on ? (await window.noc?.bedrockFpsStop?.()) : (await window.noc?.bedrockFpsStart?.());
       await refreshMiniFpsState();
       if (!r?.ok) {
-        setInviteStatus(`FPS монитор: ошибка — ${r?.error || 'unknown'}`);
+        if (String(r?.error || '') === 'presentmon_not_bundled') {
+          setInviteStatus('FPS монитор: в сборке нет PresentMon.exe. Добавь tools/presentmon/PresentMon.exe и перезапусти лаунчер.');
+        } else {
+          setInviteStatus(`FPS монитор: ошибка — ${r?.error || 'unknown'}`);
+        }
       } else {
         setInviteStatus(`FPS монитор: ${on ? 'выключен' : 'включён'} (реальные MIN/MAX из рендера игры)`);
       }
