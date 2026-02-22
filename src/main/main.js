@@ -1194,14 +1194,15 @@ async function startBedrockFpsMonitor() {
       if (!header) {
         header = s.split(',').map(x => String(x || '').trim().toLowerCase().replace(/"/g, ''));
         msIdx = header.findIndex(h => h === 'msbetweenpresents' || h === 'ms between presents');
-        procIdx = header.findIndex(h => h === 'processname' || h === 'process_name' || h === 'exename');
+        procIdx = header.findIndex(h => h === 'processname' || h === 'process_name' || h === 'exename' || h === 'application');
         return;
       }
       const parts = s.split(',').map(x => String(x || '').trim().replace(/^"|"$/g, ''));
       if (procIdx >= 0 && procIdx < parts.length) {
         const pn = String(parts[procIdx] || '').toLowerCase();
-        const okProc = pn.includes('minecraft.windows.exe') || pn.includes('minecraftwindowsbeta.exe') || pn.includes('javaw.exe') || pn.includes('java.exe');
-        if (pn && !okProc) return;
+        const gameProc = pn.includes('minecraft.windows.exe') || pn.includes('minecraftwindowsbeta.exe') || pn.includes('javaw.exe') || pn.includes('java.exe');
+        const fallbackProc = pn.includes('dwm.exe');
+        if (pn && !gameProc && !fallbackProc) return;
       }
       if (msIdx < 0 || msIdx >= parts.length) return;
       const ms = Number(parts[msIdx]);
