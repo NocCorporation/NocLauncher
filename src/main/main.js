@@ -4324,6 +4324,9 @@ ipcMain.handle('bedrock:launch', async () => {
     // Try to add server entry first (harmless if already present)
     await ensureBedrockServerLink();
 
+    // Force launch defaults for all users of this launcher profile
+    try { applyBedrockLaunchDefaults(); } catch (_) {}
+
     // Hide launcher immediately, then launch Bedrock
     hideLauncherForGame();
     await shell.openExternal('minecraft://');
@@ -4637,6 +4640,36 @@ function readOptionsTxt(optionsPath) {
 function writeOptionsTxt(optionsPath, lines) {
   ensureDir(path.dirname(optionsPath));
   fs.writeFileSync(optionsPath, lines.join(os.EOL), 'utf8');
+}
+
+function applyBedrockLaunchDefaults() {
+  try {
+    const p = bedrockPaths();
+    if (!p) return { ok: false, error: 'paths_not_found' };
+    ensureDir(p.minecraftpe);
+    const r = readOptionsTxt(p.optionsTxt);
+    let lines = r.ok ? r.lines : [''];
+    const items = r.ok ? r.items : [];
+
+    const set = (k, v) => {
+      const idx = items.findIndex(x => x.key === k);
+      if (idx >= 0) {
+        const it = items[idx];
+        lines[it.lineIndex] = `${it.key}${it.sep}${v}`;
+      } else {
+        lines.push(`${k}:${v}`);
+      }
+    };
+
+    // Force launcher defaults for Bedrock start: uncapped FPS + VSync OFF.
+    set('gfx_max_framerate', '0');
+    set('gfx_vsync', '0');
+
+    writeOptionsTxt(p.optionsTxt, lines);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: String(e?.message || e) };
+  }
 }
 
 ipcMain.handle('bedrock:optionsRead', async () => {
