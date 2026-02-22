@@ -4746,31 +4746,16 @@ function resolveBedrockTreatmentsFile() {
   if (!p) return null;
   ensureDir(p.minecraftpe);
 
-  // 1) Newer Bedrock format inside minecraftpe
-  try {
-    const files = fs.readdirSync(p.minecraftpe).filter(n => /^treatment_tags---.*\.json$/i.test(String(n || '')));
-    if (files.length) {
-      files.sort((a, b) => {
-        try {
-          const sa = fs.statSync(path.join(p.minecraftpe, a)).mtimeMs || 0;
-          const sb = fs.statSync(path.join(p.minecraftpe, b)).mtimeMs || 0;
-          return sb - sa;
-        } catch (_) { return 0; }
-      });
-      return path.join(p.minecraftpe, files[0]);
-    }
-  } catch (_) {}
-
-  // 2) Legacy/alternate format: treatments/treatment_packs*/treatment_tags.json
+  // 1) Priority: global/legacy treatments root (your real Bedrock path)
   try {
     const roots = [];
-    // a) Under current com.mojang root (some installs)
-    roots.push(path.join(path.dirname(p.minecraftpe), 'treatments'));
-    // b) Global roaming root (your case): %APPDATA%/Minecraft Bedrock/treatments
+    // a) Global roaming root: %APPDATA%/Minecraft Bedrock/treatments
     try {
       const roaming = process.env.APPDATA;
       if (roaming) roots.push(path.join(roaming, 'Minecraft Bedrock', 'treatments'));
     } catch (_) {}
+    // b) Under current com.mojang root (some installs)
+    roots.push(path.join(path.dirname(p.minecraftpe), 'treatments'));
 
     const candidates = [];
     for (const treatmentsRoot of roots) {
@@ -4790,6 +4775,23 @@ function resolveBedrockTreatmentsFile() {
         try { return (fs.statSync(b).mtimeMs || 0) - (fs.statSync(a).mtimeMs || 0); } catch (_) { return 0; }
       });
       return candidates[0];
+    }
+  } catch (_) {}
+
+  // 2) Newer Bedrock format inside minecraftpe (ignore our synthetic file if real exists)
+  try {
+    const files = fs.readdirSync(p.minecraftpe)
+      .filter(n => /^treatment_tags---.*\.json$/i.test(String(n || '')))
+      .filter(n => String(n || '').toLowerCase() !== 'treatment_tags---noclauncher.json');
+    if (files.length) {
+      files.sort((a, b) => {
+        try {
+          const sa = fs.statSync(path.join(p.minecraftpe, a)).mtimeMs || 0;
+          const sb = fs.statSync(path.join(p.minecraftpe, b)).mtimeMs || 0;
+          return sb - sa;
+        } catch (_) { return 0; }
+      });
+      return path.join(p.minecraftpe, files[0]);
     }
   } catch (_) {}
 
