@@ -1164,10 +1164,8 @@ async function startBedrockFpsMonitor() {
   if (bedrockFpsState.enabled) return { ok: true, already: true };
 
   if (!hasPresentMonAccess()) {
+    // One-time attempt to grant access; do not hard-block start in this turn.
     requestPresentMonAccessSetup();
-    bedrockFpsState = { ...bedrockFpsState, enabled: false, available: false, backend: 'presentmon', error: 'presentmon_access_setup_required: подтвердите UAC и перезапустите лаунчер' };
-    emitBedrockFpsState();
-    return { ok: false, error: bedrockFpsState.error };
   }
 
   const pm = await ensurePresentMonBinary();
@@ -1188,7 +1186,7 @@ async function startBedrockFpsMonitor() {
     try { if (fs.existsSync(bedrockFpsCsvPath)) fs.unlinkSync(bedrockFpsCsvPath); } catch (_) {}
 
     const argList = [
-      '--session_name','NocFPS','--stop_existing_session',
+      '--session_name','NocFPS','--stop_existing_session','--restart_as_admin',
       '--process_name','Minecraft.Windows.exe','--process_name','MinecraftWindowsBeta.exe','--process_name','javaw.exe','--process_name','java.exe',
       '--output_file', bedrockFpsCsvPath,
       '--no_console_stats','--v1_metrics','--terminate_on_proc_exit'
