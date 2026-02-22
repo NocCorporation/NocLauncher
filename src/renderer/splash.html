@@ -231,15 +231,29 @@
         'Решайте проблемы, ошибки и ищите новых друзей для игры в Telegram: @bundstraze!',
         'Проверяйте файлы на вирусы, прежде чем устанавливать их через кнопку проверки на вирусы!'
       ];
-      let i = 0;
-      setInterval(() => {
-        i = (i + 1) % lines.length;
-        el.style.animation = 'none';
-        // force reflow for replay
-        void el.offsetWidth;
-        el.style.animation = '';
-        el.textContent = lines[i];
-      }, 1900);
+      let i = Math.floor(Math.random() * lines.length);
+      el.textContent = lines[i];
+
+      const pickNextIndex = () => {
+        if (lines.length < 2) return 0;
+        let n = i;
+        while (n === i) n = Math.floor(Math.random() * lines.length);
+        return n;
+      };
+
+      const loop = () => {
+        const delay = 3800 + Math.floor(Math.random() * 1800); // 3.8s..5.6s
+        setTimeout(() => {
+          i = pickNextIndex();
+          el.style.animation = 'none';
+          void el.offsetWidth; // reflow for replay
+          el.style.animation = '';
+          el.textContent = lines[i];
+          loop();
+        }, delay);
+      };
+
+      loop();
     })();
   </script>
 </body>
