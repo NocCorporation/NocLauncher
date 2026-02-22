@@ -19,7 +19,10 @@ if (!pmExe || !csvPath) {
 let pmProc = null;
 let pollTimer = null;
 let healthTimer = null;
+let staleTimer = null;
 let sampleCount = 0;
+let lastSampleTs = 0;
+let restartCount = 0;
 let header = null;
 let msIdx = -1;
 let procIdx = -1;
@@ -90,6 +93,7 @@ function pollCsv() {
     const picked = bestGame || bestDwm || bestAny;
     if (!picked) return;
     sampleCount += 1;
+    lastSampleTs = Date.now();
     emit({ type: 'fps', current: Number(picked.fps || 0), source: bestGame ? 'game' : (bestDwm ? 'dwm' : 'any') });
   } catch (e) {
     emit({ type: 'debug', message: `csv_err:${String(e?.message || e)}` });
@@ -101,6 +105,8 @@ function stop() {
   pollTimer = null;
   try { if (healthTimer) clearTimeout(healthTimer); } catch (_) {}
   healthTimer = null;
+  try { if (staleTimer) clearInterval(staleTimer); } catch (_) {}
+  staleTimer = null;
   try { if (pmProc && !pmProc.killed) pmProc.kill(); } catch (_) {}
   pmProc = null;
   try {
@@ -113,23 +119,38 @@ try {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   try { if (fs.existsSync(csvPath)) fs.unlinkSync(csvPath); } catch (_) {}
 
-  const args = [
-    '--session_name','NocFPS','--stop_existing_session','--restart_as_admin',
-    '--output_file', csvPath,
-    '--no_console_stats','--v1_metrics'
-  ];
-  pmProc = spawn(pmExe, args, { windowsHide: true, stdio: ['ignore', 'ignore', 'ignore'] });
+  const startPresentMon = () => {
+    const args = [
+      '--session_name','NocFPS','--stop_existing_session',
+      '--process_name','Minecraft.Windows.exe','--process_name','MinecraftWindowsBeta.exe','--process_name','javaw.exe','--process_name','java.exe',
+      '--output_file', csvPath,
+      '--no_console_stats','--v1_metrics'
+    ];
+    pmProc = spawn(pmExe, args, { windowsHide: true, stdio: ['ignore', 'ignore', 'ignore'] });
+    pmProc.on('exit', () => {
+      emit({ type: 'debug', message: 'presentmon_exited' });
+      if (restartCount < 5) {
+        restartCount += 1;
+        setTimeout(startPresentMon, 1200);
+      }
+    });
+  };
+
+  startPresentMon();
   pollTimer = setInterval(pollCsv, 700);
   setTimeout(pollCsv, 800);
+  staleTimer = setInterval(() => {
+    if (!lastSampleTs) return;
+    if (Date.now() - lastSampleTs > 4000) {
+      emit({ type: 'debug', message: 'stale_samples_restarting_pm' });
+      try { if (pmProc && !pmProc.killed) pmProc.kill(); } catch (_) {}
+    }
+  }, 1500);
   healthTimer = setTimeout(() => {
     if (sampleCount > 0) return;
     emit({ type: 'error', message: 'no_samples_6s: likely missing admin/perf-log-users access' });
   }, 6000);
   emit({ type: 'started' });
-
-  pmProc.on('exit', () => {
-    emit({ type: 'debug', message: 'presentmon_exited' });
-  });
 } catch (e) {
   emit({ type: 'error', message: String(e?.message || e) });
 }
