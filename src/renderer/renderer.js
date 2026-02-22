@@ -2553,7 +2553,7 @@ function wireUI() {
   });
   $('#btnBedrockVirusCheck')?.addEventListener('click', () => openModal('modalBedrockVirus'));
   $('#btnBedrockSkinsSite')?.addEventListener('click', async () => {
-    const url = 'https://www.minecraftskins.com/';
+    const url = 'https://namemc.com/minecraft-skins';
     const r = await window.noc?.webOpen?.({ key: 'bedrock-skins', title: 'Minecraft Skins', url });
     if (!r?.ok) {
       try { await window.noc?.shellOpenExternal?.(url); } catch (_) {}
