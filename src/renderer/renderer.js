@@ -2568,16 +2568,7 @@ function wireUI() {
     }
   });
 
-  $('#btnVersionToolNew')?.addEventListener('click', async () => {
-    try {
-      const r = await window.noc?.bedrockVersionToolOpen?.('new', 'instrumente');
-      if (r?.ok) setStatus('Открыт загрузчик новых версий');
-      else setStatus('Не удалось открыть загрузчик новых версий');
-    } catch (_) {
-      setStatus('Не удалось открыть загрузчик новых версий');
-    }
-    closeModal('modalVersionToolPick');
-  });
+  // New versions button removed by request; sidebar add-ons keeps only old versions.
 
   $('#btnVersionToolOld')?.addEventListener('click', async () => {
     try {
