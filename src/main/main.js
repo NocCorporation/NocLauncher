@@ -840,6 +840,7 @@ function readBedrockModsBaseline() {
 }
 
 function restoreBedrockModsBaseline() {
+  appendBedrockIntegrityEvent('mods_restore_start', {});
   let baseline = readBedrockModsBaseline();
   if (!baseline || !Object.keys(baseline.files || {}).length) {
     baseline = captureBedrockModsBaseline();
@@ -892,7 +893,17 @@ function restoreBedrockModsBaseline() {
     }
   }
 
-  return { ok: failed.length === 0, restored, quarantined, failed };
+  const summary = { ok: failed.length === 0, restored, quarantined, failed };
+  appendBedrockIntegrityEvent('mods_restore_done', {
+    ok: summary.ok,
+    restoredCount: restored.length,
+    quarantinedCount: quarantined.length,
+    failedCount: failed.length,
+    restored,
+    quarantined,
+    failed
+  });
+  return summary;
 }
 
 async function bedrockIntegrityCheck() {
@@ -960,19 +971,29 @@ async function bedrockIntegrityCheck() {
     }
   }
 
-  return {
+  const out = {
     ok: mismatches.length === 0,
     baselineCreated,
     baselineAt: baseline?.createdAt || 0,
     checked,
     mismatches
   };
+  appendBedrockIntegrityEvent('integrity_check', {
+    ok: out.ok,
+    baselineCreated,
+    baselineAt: out.baselineAt,
+    checkedCount: checked.length,
+    mismatchCount: mismatches.length,
+    mismatches
+  });
+  return out;
 }
 
 async function bedrockIntegrityRepair(paths = []) {
   if (process.platform !== 'win32') return { ok: false, error: 'windows_only' };
   const uniq = Array.from(new Set((paths || []).filter(Boolean)));
   if (!uniq.length) return { ok: false, error: 'nothing_to_repair' };
+  appendBedrockIntegrityEvent('integrity_repair_start', { paths: uniq });
 
   const repairedSystem = [];
   const repairedAppx = [];
@@ -1022,7 +1043,7 @@ async function bedrockIntegrityRepair(paths = []) {
     }
   }
 
-  return {
+  const summary = {
     ok: failed.length === 0,
     repairedSystem,
     repairedAppx,
@@ -1030,6 +1051,19 @@ async function bedrockIntegrityRepair(paths = []) {
     failed,
     paths: uniq
   };
+  appendBedrockIntegrityEvent('integrity_repair_done', {
+    ok: summary.ok,
+    repairedSystemCount: repairedSystem.length,
+    repairedAppxCount: repairedAppx.length,
+    quarantinedCount: quarantined.length,
+    failedCount: failed.length,
+    repairedSystem,
+    repairedAppx,
+    quarantined,
+    failed,
+    paths: uniq
+  });
+  return summary;
 }
 
 const Store = require('electron-store');
@@ -1251,6 +1285,21 @@ function appendBedrockLaunchLog(line) {
     // Mirror Bedrock diagnostics to common latest.txt so existing UI log flows can find it.
     fs.appendFileSync(commonLog, row, 'utf8');
     return bedrockLog;
+  } catch (_) {
+    return null;
+  }
+}
+
+function appendBedrockIntegrityEvent(event, payload = {}) {
+  try {
+    const settings = store?.store || {};
+    const gameDir = resolveActiveGameDir(settings);
+    const logDir = path.join(gameDir, 'launcher_logs');
+    fs.mkdirSync(logDir, { recursive: true });
+    const eventsFile = path.join(logDir, 'bedrock-integrity-events.jsonl');
+    const row = JSON.stringify({ ts: tsIso(), event, ...payload });
+    fs.appendFileSync(eventsFile, row + os.EOL, 'utf8');
+    return eventsFile;
   } catch (_) {
     return null;
   }
