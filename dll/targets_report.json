@@ -1,0 +1,57 @@
+{
+  "generatedAt": "2026-02-24T13:14:16.489Z",
+  "installLocation": "C:\\Program Files\\WindowsApps\\MICROSOFT.MINECRAFTUWP_1.26.101.0_x64__8wekyb3d8bbwe",
+  "localPackage": "C:\\Users\\kiril\\AppData\\Local\\Packages\\MICROSOFT.MINECRAFTUWP_8wekyb3d8bbwe",
+  "copied": [
+    {
+      "bucket": "appx_targets",
+      "name": "vcruntime140_1.dll"
+    }
+  ],
+  "missing": [
+    {
+      "bucket": "johnnyer_targets",
+      "name": "dlllist.txt"
+    },
+    {
+      "bucket": "johnnyer_targets",
+      "name": "OnlineFix.ini"
+    },
+    {
+      "bucket": "johnnyer_targets",
+      "name": "OnlineFix64.dll"
+    },
+    {
+      "bucket": "johnnyer_targets",
+      "name": "winmm.dll"
+    },
+    {
+      "bucket": "appx_targets",
+      "name": "vcruntime140.dll"
+    },
+    {
+      "bucket": "mods_targets",
+      "name": "MinecraftForFree.dll"
+    },
+    {
+      "bucket": "mods_targets",
+      "name": "OnlineFix64.dll"
+    },
+    {
+      "bucket": "mods_targets",
+      "name": "winmm.dll"
+    },
+    {
+      "bucket": "mods_targets",
+      "name": "version.dll"
+    },
+    {
+      "bucket": "mods_targets",
+      "name": "dxgi.dll"
+    },
+    {
+      "bucket": "mods_targets",
+      "name": "d3d11.dll"
+    }
+  ]
+}
