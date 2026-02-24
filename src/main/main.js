@@ -684,6 +684,16 @@ async function bedrockIntegrityCheck() {
     baselineCreated = true;
   }
 
+  // Refresh baseline automatically when new required targets appear (after updates).
+  try {
+    const required = bedrockIntegrityTargets();
+    const hasAll = required.every(p => !!baseline?.files?.[p]);
+    if (!hasAll) {
+      baseline = captureBedrockIntegrityBaseline();
+      baselineCreated = true;
+    }
+  } catch (_) {}
+
   const mismatches = [];
   const checked = [];
 
