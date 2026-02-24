@@ -476,6 +476,102 @@ function runPowerShellAsync(command) {
     });
   });
 }
+
+function sha256FileSync(filePath) {
+  const h = require('crypto').createHash('sha256');
+  const fd = fs.openSync(filePath, 'r');
+  try {
+    const buf = Buffer.alloc(1024 * 1024);
+    while (true) {
+      const n = fs.readSync(fd, buf, 0, buf.length, null);
+      if (!n) break;
+      h.update(buf.subarray(0, n));
+    }
+    return h.digest('hex');
+  } finally {
+    try { fs.closeSync(fd); } catch {}
+  }
+}
+
+function bedrockIntegrityTargets() {
+  const list = [
+    path.join(process.env.WINDIR || 'C:\\Windows', 'System32', 'Windows.ApplicationModel.Store.dll'),
+    path.join(process.env.WINDIR || 'C:\\Windows', 'SysWOW64', 'Windows.ApplicationModel.Store.dll')
+  ];
+  return list.filter(p => fs.existsSync(p));
+}
+
+function captureBedrockIntegrityBaseline() {
+  const targets = bedrockIntegrityTargets();
+  const files = {};
+  for (const p of targets) {
+    try { files[p] = sha256FileSync(p); } catch (_) {}
+  }
+  const out = { createdAt: Date.now(), files };
+  if (Object.keys(files).length) store.set('bedrockIntegrityBaseline', out);
+  return out;
+}
+
+function readBedrockIntegrityBaseline() {
+  const b = store.get('bedrockIntegrityBaseline');
+  if (b && typeof b === 'object' && b.files && typeof b.files === 'object') return b;
+  return null;
+}
+
+async function bedrockIntegrityCheck() {
+  if (process.platform !== 'win32') return { ok: true, windowsOnly: true };
+  let baseline = readBedrockIntegrityBaseline();
+  let baselineCreated = false;
+  if (!baseline || !Object.keys(baseline.files || {}).length) {
+    baseline = captureBedrockIntegrityBaseline();
+    baselineCreated = true;
+  }
+
+  const mismatches = [];
+  const checked = [];
+  for (const p of Object.keys(baseline.files || {})) {
+    try {
+      if (!fs.existsSync(p)) {
+        mismatches.push({ path: p, reason: 'missing' });
+        checked.push({ path: p, exists: false });
+        continue;
+      }
+      const actual = sha256FileSync(p);
+      const expected = String(baseline.files[p] || '').toLowerCase();
+      const ok = actual.toLowerCase() === expected;
+      checked.push({ path: p, exists: true, ok, actual, expected });
+      if (!ok) mismatches.push({ path: p, reason: 'hash_mismatch', actual, expected });
+    } catch (e) {
+      mismatches.push({ path: p, reason: 'read_failed', error: String(e?.message || e) });
+    }
+  }
+
+  return {
+    ok: mismatches.length === 0,
+    baselineCreated,
+    baselineAt: baseline?.createdAt || 0,
+    checked,
+    mismatches
+  };
+}
+
+async function bedrockIntegrityRepair(paths = []) {
+  if (process.platform !== 'win32') return { ok: false, error: 'windows_only' };
+  const uniq = Array.from(new Set((paths || []).filter(Boolean)));
+  if (!uniq.length) return { ok: false, error: 'nothing_to_repair' };
+
+  const inner = uniq
+    .map(p => `sfc /scanfile=\"${String(p).replace(/\"/g, '\\\"')}\"`)
+    .join('; ');
+  const cmd = `Start-Process -FilePath powershell -Verb RunAs -WindowStyle Normal -ArgumentList '-NoProfile','-Command','${inner.replace(/'/g, "''")}'`;
+  try {
+    await runPowerShellAsync(cmd);
+    return { ok: true, started: true, paths: uniq };
+  } catch (e) {
+    return { ok: false, error: String(e?.message || e), paths: uniq };
+  }
+}
+
 const Store = require('electron-store');
 const fetch = (...args) => import('node-fetch').then(({default: f}) => f(...args));
 const AdmZip = require('adm-zip');
@@ -4666,6 +4762,22 @@ ipcMain.handle('bedrock:check', async () => {
   }
 });
 
+ipcMain.handle('bedrock:integrityCheck', async () => {
+  try {
+    return await bedrockIntegrityCheck();
+  } catch (e) {
+    return { ok: false, error: String(e?.message || e) };
+  }
+});
+
+ipcMain.handle('bedrock:integrityRepair', async (_e, payload) => {
+  try {
+    return await bedrockIntegrityRepair(Array.isArray(payload?.paths) ? payload.paths : []);
+  } catch (e) {
+    return { ok: false, error: String(e?.message || e) };
+  }
+});
+
 ipcMain.handle('bedrock:launch', async () => {
   if (process.platform !== 'win32') {
     return { ok: false, error: 'Bedrock mode поддерживается только на Windows.' };
@@ -4675,6 +4787,22 @@ ipcMain.handle('bedrock:launch', async () => {
   try {
     bedrockLogPath = appendBedrockLaunchLog('INFO: Bedrock launch requested');
     if (bedrockLogPath) sendMcState('logpath', { logDir: path.dirname(bedrockLogPath), logPath: bedrockLogPath });
+
+    // Integrity guard: detect and block known Store DLL tampering before launch.
+    const integrity = await bedrockIntegrityCheck();
+    appendBedrockLaunchLog(`INFO: integrity=${JSON.stringify(integrity)}`);
+    if (!integrity?.ok) {
+      const toRepair = (integrity.mismatches || []).map(x => x.path).filter(Boolean);
+      const repair = await bedrockIntegrityRepair(toRepair);
+      appendBedrockLaunchLog(`WARN: integrity_repair=${JSON.stringify(repair)}`);
+      return {
+        ok: false,
+        error: 'Обнаружены изменения системных файлов Bedrock/Store. Запущено восстановление (подтверди UAC), затем запусти игру повторно.',
+        integrity,
+        repair,
+        logPath: bedrockLogPath || ''
+      };
+    }
 
     // Preflight checks before launch
     const pf = await bedrockPreflightChecks();
