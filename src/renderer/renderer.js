@@ -2544,11 +2544,9 @@ function wireUI() {
   $('#btnCloseProfiles')?.addEventListener('click', () => closeModal('modalProfiles'));
   $('#btnBedrockVersions')?.addEventListener('click', async () => {
     try {
-      const pick = (window.prompt('Выбери режим:\n1 — Новые версии\n2 — Старые версии', '1') || '').trim();
-      const mode = pick === '2' ? 'old' : 'new';
-      const r = await window.noc?.bedrockVersionToolOpen?.(mode);
+      const r = await window.noc?.bedrockVersionToolOpen?.('new');
       if (r?.ok) {
-        setStatus(mode === 'old' ? 'Открыт загрузчик старых версий' : 'Открыт загрузчик новых версий');
+        setStatus('Открыт загрузчик новых версий');
         return;
       }
     } catch (_) {}
@@ -2568,12 +2566,32 @@ function wireUI() {
   $('#btnBedrockSkins')?.addEventListener('click', () => openBedrockContent('skins'));
   $('#btnBedrockLibrary')?.addEventListener('click', () => openBedrockContent('packs'));
   $('#btnBedrockAddons')?.addEventListener('click', async () => {
-    const url = 'https://www.curseforge.com/minecraft-bedrock';
-    const r = await window.noc?.webOpen?.({ key: 'bedrock-addons', title: 'Bedrock Addons', url });
-    if (!r?.ok) {
-      try { await window.noc?.shellOpenExternal?.(url); } catch (_) {}
-    }
+    openModal('modalVersionToolPick');
   });
+
+  $('#btnVersionToolNew')?.addEventListener('click', async () => {
+    try {
+      const r = await window.noc?.bedrockVersionToolOpen?.('new');
+      if (r?.ok) setStatus('Открыт загрузчик новых версий');
+      else setStatus('Не удалось открыть загрузчик новых версий');
+    } catch (_) {
+      setStatus('Не удалось открыть загрузчик новых версий');
+    }
+    closeModal('modalVersionToolPick');
+  });
+
+  $('#btnVersionToolOld')?.addEventListener('click', async () => {
+    try {
+      const r = await window.noc?.bedrockVersionToolOpen?.('old');
+      if (r?.ok) setStatus('Открыт загрузчик старых версий');
+      else setStatus('Не удалось открыть загрузчик старых версий');
+    } catch (_) {
+      setStatus('Не удалось открыть загрузчик старых версий');
+    }
+    closeModal('modalVersionToolPick');
+  });
+
+  $('#btnCloseVersionToolPick')?.addEventListener('click', () => closeModal('modalVersionToolPick'));
   $('#btnBedrockVirusCheck')?.addEventListener('click', () => openModal('modalBedrockVirus'));
   $('#btnBedrockExperiments')?.addEventListener('click', async () => {
     await renderBedrockTreatments();
@@ -3136,7 +3154,7 @@ function wireUI() {
   });
 
 
-  ['modalVersions', 'modalSettings', 'modalCrash', 'modalBedrockVersions', 'modalBedrockContent', 'modalBedrockVirus', 'modalBedrockMsFix', 'modalBedrockExperiments', 'modalProfiles', 'modalAuth'].forEach((id) => {
+  ['modalVersions', 'modalSettings', 'modalCrash', 'modalBedrockVersions', 'modalBedrockContent', 'modalBedrockVirus', 'modalBedrockMsFix', 'modalBedrockExperiments', 'modalProfiles', 'modalAuth', 'modalVersionToolPick'].forEach((id) => {
     const m = document.getElementById(id);
     if (!m) return;
     m.addEventListener('pointerdown', (e) => { if (e.target === m) closeModal(id); });
