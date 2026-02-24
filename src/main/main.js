@@ -675,6 +675,110 @@ async function bedrockQuarantineFileElevated(filePath) {
   }
 }
 
+function bedrockCriticalBackupDir() {
+  const p = path.join(app.getPath('userData'), 'bedrock-clean', 'critical');
+  try { fs.mkdirSync(p, { recursive: true }); } catch (_) {}
+  return p;
+}
+
+function bedrockCaptureCriticalBackup(targetPath) {
+  try {
+    if (!targetPath || !fs.existsSync(targetPath)) return '';
+    const hash = sha256FileSync(targetPath);
+    const name = `${hash}_${path.basename(targetPath)}`;
+    const dest = path.join(bedrockCriticalBackupDir(), name);
+    if (!fs.existsSync(dest)) fs.copyFileSync(targetPath, dest);
+    return dest;
+  } catch (_) {
+    return '';
+  }
+}
+
+async function runElevatedPowerShellScriptWithLog(scriptText, tag = 'expfix') {
+  const tmpBase = path.join(app.getPath('userData'), 'tmp');
+  fs.mkdirSync(tmpBase, { recursive: true });
+  const id = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const scriptPath = path.join(tmpBase, `${tag}_${id}.ps1`);
+  const runLogPath = path.join(tmpBase, `${tag}_${id}.log`);
+  fs.writeFileSync(scriptPath, scriptText, 'utf8');
+
+  const cmd = [
+    `$p='${scriptPath.replace(/'/g, "''")}'`,
+    "$proc=Start-Process -FilePath powershell -Verb RunAs -WindowStyle Normal -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',$p) -Wait -PassThru",
+    'Write-Output $proc.ExitCode'
+  ].join('; ');
+
+  try {
+    const out = await runPowerShellAsync(cmd);
+    const exitCode = Number(String(out || '').trim() || 0);
+    let logText = '';
+    try { if (fs.existsSync(runLogPath)) logText = fs.readFileSync(runLogPath, 'utf8'); } catch (_) {}
+    return { ok: exitCode === 0, exitCode, logPath: runLogPath, logText };
+  } catch (e) {
+    let logText = '';
+    try { if (fs.existsSync(runLogPath)) logText = fs.readFileSync(runLogPath, 'utf8'); } catch (_) {}
+    return { ok: false, error: String(e?.message || e), exitCode: -1, logPath: runLogPath, logText };
+  }
+}
+
+async function bedrockExperimentalOwnershipFix() {
+  const result = { ok: false, target: '', backup: '', pre: null, post: null, run: null, note: 'experimental' };
+  try {
+    const install = getBedrockInstallLocationSync();
+    const target = install ? path.join(install, 'vcruntime140_1.dll') : '';
+    result.target = target;
+    appendBedrockLaunchLog(`EXPERIMENTAL: ownership_fix target=${target || 'none'}`);
+    if (!target) return { ...result, error: 'install_location_not_found' };
+
+    const baseline = readBedrockIntegrityBaseline();
+    const expected = String(baseline?.files?.[target]?.sha256 || '').toLowerCase();
+    const preExists = fs.existsSync(target);
+    const preHash = preExists ? (sha256FileSync(target).toLowerCase()) : '';
+    result.pre = { exists: preExists, hash: preHash, expected };
+
+    let backup = '';
+    if (expected) {
+      const candidate = path.join(bedrockCriticalBackupDir(), `${expected}_${path.basename(target)}`);
+      if (fs.existsSync(candidate)) backup = candidate;
+    }
+    if (!backup) backup = bedrockCaptureCriticalBackup(target);
+    result.backup = backup;
+    if (!backup || !fs.existsSync(backup)) return { ...result, error: 'backup_not_found' };
+
+    const tEsc = target.replace(/'/g, "''");
+    const bEsc = backup.replace(/'/g, "''");
+    const runLogPath = path.join(app.getPath('userData'), 'tmp', `ownership_${Date.now()}.log`).replace(/'/g, "''");
+    const ps = [
+      `$ErrorActionPreference='Continue'`,
+      `Start-Transcript -Path '${runLogPath}' -Append -Force | Out-Null`,
+      `Write-Host '[ownership] target=${tEsc}'`,
+      `takeown /f '${tEsc}' /a`,
+      `icacls '${tEsc}' /grant Administrators:F /c`,
+      `Copy-Item -LiteralPath '${bEsc}' -Destination '${tEsc}' -Force`,
+      `icacls '${tEsc}' /setowner 'NT SERVICE\\TrustedInstaller' /c`,
+      `icacls '${tEsc}' /inheritance:e /c`,
+      `Write-Host '[ownership] done'`,
+      `Stop-Transcript | Out-Null`
+    ].join('; ');
+
+    const run = await runElevatedPowerShellScriptWithLog(ps, 'ownership_fix');
+    result.run = run;
+    appendBedrockLaunchLog(`EXPERIMENTAL: ownership_fix run=${JSON.stringify({ ok: run.ok, exitCode: run.exitCode, error: run.error || '' })}`);
+    if (run.logText) appendBedrockLaunchLog(`EXPERIMENTAL: ownership_fix details=${String(run.logText).slice(-1200)}`);
+
+    const postExists = fs.existsSync(target);
+    const postHash = postExists ? (sha256FileSync(target).toLowerCase()) : '';
+    result.post = { exists: postExists, hash: postHash, expected };
+    result.ok = !!postExists && !!expected && postHash === expected;
+
+    appendBedrockLaunchLog(`EXPERIMENTAL: ownership_fix post=${JSON.stringify(result.post)}`);
+    return result;
+  } catch (e) {
+    appendBedrockLaunchLog(`EXPERIMENTAL: ownership_fix failed=${String(e?.message || e)}`);
+    return { ...result, error: String(e?.message || e) };
+  }
+}
+
 function bedrockModsDirs() {
   const dirs = [];
   try {
@@ -5152,6 +5256,14 @@ ipcMain.handle('bedrock:modsBaselineCapture', async () => {
   try {
     const baseline = captureBedrockModsBaseline();
     return { ok: true, baseline };
+  } catch (e) {
+    return { ok: false, error: String(e?.message || e) };
+  }
+});
+
+ipcMain.handle('bedrock:experimentalOwnershipFix', async () => {
+  try {
+    return await bedrockExperimentalOwnershipFix();
   } catch (e) {
     return { ok: false, error: String(e?.message || e) };
   }
