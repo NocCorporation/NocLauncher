@@ -602,7 +602,30 @@ function bedrockQuarantineFile(filePath) {
     const name = `${Date.now()}_${path.basename(filePath)}`;
     const dest = path.join(base, name);
     fs.renameSync(filePath, dest);
-    return { ok: true, movedTo: dest };
+    return { ok: true, movedTo: dest, elevated: false };
+  } catch (e) {
+    return { ok: false, error: String(e?.message || e) };
+  }
+}
+
+async function bedrockQuarantineFileElevated(filePath) {
+  try {
+    const base = path.join(app.getPath('userData'), 'quarantine', 'bedrock');
+    fs.mkdirSync(base, { recursive: true });
+    const name = `${Date.now()}_${path.basename(filePath)}`;
+    const dest = path.join(base, name);
+
+    const fromEsc = String(filePath).replace(/"/g, '\\"');
+    const toEsc = String(dest).replace(/"/g, '\\"');
+    const inner = `Move-Item -LiteralPath \"${fromEsc}\" -Destination \"${toEsc}\" -Force`;
+    const cmd = `Start-Process -FilePath powershell -Verb RunAs -WindowStyle Normal -ArgumentList '-NoProfile','-Command','${inner.replace(/'/g, "''")}'`;
+    await runPowerShellAsync(cmd);
+
+    // Move may require user confirmation and can still fail silently in rare cases.
+    if (fs.existsSync(dest) && !fs.existsSync(filePath)) {
+      return { ok: true, movedTo: dest, elevated: true };
+    }
+    return { ok: false, error: 'elevated_quarantine_not_confirmed', movedTo: dest };
   } catch (e) {
     return { ok: false, error: String(e?.message || e) };
   }
@@ -691,8 +714,12 @@ async function bedrockIntegrityRepair(paths = []) {
   for (const p of userTargets) {
     try {
       if (!fs.existsSync(p)) continue;
-      const q = bedrockQuarantineFile(p);
-      if (q.ok) quarantined.push({ path: p, movedTo: q.movedTo });
+      let q = bedrockQuarantineFile(p);
+      if (!q.ok) {
+        // Fallback with UAC elevation for ACL-protected/locked locations.
+        q = await bedrockQuarantineFileElevated(p);
+      }
+      if (q.ok) quarantined.push({ path: p, movedTo: q.movedTo, elevated: !!q.elevated });
       else failed.push({ path: p, error: q.error || 'quarantine_failed' });
     } catch (e) {
       failed.push({ path: p, error: String(e?.message || e) });
