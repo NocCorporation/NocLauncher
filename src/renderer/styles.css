@@ -308,9 +308,9 @@ textarea.ta{
   object-fit: cover;
   display: block;
 }
-.sbBrandTxt{ min-width: 0; }
-.sbName{ font-weight: 900; letter-spacing: .2px; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sbSub{ color: var(--muted2); font-size: 11px; margin-top: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sbBrandTxt{ min-width: 0; flex: 1 1 auto; }
+.sbName{ font-weight: 900; letter-spacing: .1px; font-size: 12px; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sbSub{ color: var(--muted2); font-size: 10px; line-height: 1.1; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .profileField{ background: rgba(0,0,0,.18); }
 
