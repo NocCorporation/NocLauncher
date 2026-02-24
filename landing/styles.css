@@ -145,7 +145,43 @@ h2 { font-size: clamp(1rem, 1.7vw, 1.4rem); margin: 0 0 16px; }
   margin: 0 0 10px;
   font-size: .78rem;
   color: #f2deff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
+
+.feature-card h3::before {
+  content: '✨';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  font-size: 12px;
+  border-radius: 8px;
+  background: rgba(189, 137, 255, 0.2);
+  border: 1px solid rgba(216, 177, 255, 0.35);
+}
+
+.feature-card:nth-child(1) h3::before { content: '🧭'; }
+.feature-card:nth-child(2) h3::before { content: '⚙️'; }
+.feature-card:nth-child(3) h3::before { content: '📚'; }
+.feature-card:nth-child(4) h3::before { content: '🧩'; }
+.feature-card:nth-child(5) h3::before { content: '🛠️'; }
+.feature-card:nth-child(6) h3::before { content: '🎮'; }
+.feature-card:nth-child(7) h3::before { content: '🛡️'; }
+.feature-card:nth-child(8) h3::before { content: '🎨'; }
+.feature-card:nth-child(9) h3::before { content: '🧪'; }
+.feature-card:nth-child(10) h3::before { content: '📜'; }
+.feature-card:nth-child(11) h3::before { content: '☕'; }
+.feature-card:nth-child(12) h3::before { content: '💾'; }
+.feature-card:nth-child(13) h3::before { content: '🚀'; }
+.feature-card:nth-child(14) h3::before { content: '📦'; }
+.feature-card:nth-child(15) h3::before { content: '🧠'; }
+.feature-card:nth-child(16) h3::before { content: '🧹'; }
+.feature-card:nth-child(17) h3::before { content: '🌌'; }
+.feature-card:nth-child(18) h3::before { content: '❌'; }
+.feature-card:nth-child(19) h3::before { content: '🔭'; }
 
 .feature-card p {
   margin: 0;
