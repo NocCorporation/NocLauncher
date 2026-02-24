@@ -856,7 +856,7 @@ async function bedrockQuarantineFileElevated(filePath) {
     const fromEsc = String(filePath).replace(/"/g, '\\"');
     const toEsc = String(dest).replace(/"/g, '\\"');
     const inner = `Move-Item -LiteralPath \"${fromEsc}\" -Destination \"${toEsc}\" -Force`;
-    const cmd = `Start-Process -FilePath powershell -Verb RunAs -WindowStyle Normal -ArgumentList '-NoProfile','-Command','${inner.replace(/'/g, "''")}'`;
+    const cmd = `Start-Process -FilePath powershell -Verb RunAs -WindowStyle Hidden -ArgumentList '-NoProfile','-Command','${inner.replace(/'/g, "''")}'`;
     await runPowerShellAsync(cmd);
 
     // Move may require user confirmation and can still fail silently in rare cases.
@@ -898,7 +898,7 @@ async function runElevatedPowerShellScriptWithLog(scriptText, tag = 'expfix') {
 
   const cmd = [
     `$p='${scriptPath.replace(/'/g, "''")}'`,
-    "$proc=Start-Process -FilePath powershell -Verb RunAs -WindowStyle Normal -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',$p) -Wait -PassThru",
+    "$proc=Start-Process -FilePath powershell -Verb RunAs -WindowStyle Hidden -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',$p) -Wait -PassThru",
     'Write-Output $proc.ExitCode'
   ].join('; ');
 
@@ -1207,7 +1207,7 @@ async function bedrockIntegrityRepair(paths = []) {
     const inner = sysTargets
       .map(p => `sfc /scanfile=\"${String(p).replace(/\"/g, '\\\"')}\"`)
       .join('; ');
-    const cmd = `Start-Process -FilePath powershell -Verb RunAs -WindowStyle Normal -ArgumentList '-NoProfile','-Command','${inner.replace(/'/g, "''")}'`;
+    const cmd = `Start-Process -FilePath powershell -Verb RunAs -WindowStyle Hidden -ArgumentList '-NoProfile','-Command','${inner.replace(/'/g, "''")}'`;
     try {
       await runPowerShellAsync(cmd);
       repairedSystem.push(...sysTargets);
@@ -1219,7 +1219,7 @@ async function bedrockIntegrityRepair(paths = []) {
   if (appxTargets.length) {
     try {
       const inner = "$ErrorActionPreference='SilentlyContinue'; Get-AppxPackage -AllUsers Microsoft.MinecraftUWP | ForEach-Object { Add-AppxPackage -DisableDevelopmentMode -Register ($_.InstallLocation + '\\AppxManifest.xml') }; 'ok'";
-      const cmd = `Start-Process -FilePath powershell -Verb RunAs -WindowStyle Normal -ArgumentList '-NoProfile','-Command','${inner.replace(/'/g, "''")}'`;
+      const cmd = `Start-Process -FilePath powershell -Verb RunAs -WindowStyle Hidden -ArgumentList '-NoProfile','-Command','${inner.replace(/'/g, "''")}'`;
       await runPowerShellAsync(cmd);
       repairedAppx.push(...appxTargets);
     } catch (e) {
