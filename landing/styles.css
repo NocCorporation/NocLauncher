@@ -1,0 +1,106 @@
+* { box-sizing: border-box; }
+:root {
+  --bg: #060d0b;
+  --card: rgba(18, 31, 26, 0.75);
+  --line: rgba(135, 247, 182, 0.2);
+  --text: #eafff4;
+  --muted: #a8c7b9;
+  --green: #4dff9f;
+}
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: 'Manrope', sans-serif;
+  color: var(--text);
+  background: radial-gradient(circle at 20% 20%, #113126 0%, var(--bg) 45%), var(--bg);
+  overflow-x: hidden;
+}
+.bg-orb {
+  position: fixed; border-radius: 50%; filter: blur(80px); z-index: -1; opacity: .35;
+}
+.orb-1 { width: 360px; height: 360px; background: #2cff9f; top: -80px; left: -100px; animation: float 10s ease-in-out infinite; }
+.orb-2 { width: 320px; height: 320px; background: #00c37a; bottom: -120px; right: -80px; animation: float 13s ease-in-out infinite reverse; }
+@keyframes float { 50% { transform: translateY(18px) translateX(10px); } }
+
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 24px; backdrop-filter: blur(10px);
+  background: rgba(5, 14, 11, .55); border-bottom: 1px solid var(--line);
+}
+.brand { color: var(--green); font-weight: 800; text-decoration: none; font-size: 1.2rem; }
+nav a { color: var(--muted); text-decoration: none; margin-left: 18px; }
+nav a:hover { color: #fff; }
+
+main { max-width: 1180px; margin: 0 auto; padding: 22px; }
+.hero {
+  display: grid; grid-template-columns: 1.1fr .9fr; gap: 28px; align-items: center;
+  min-height: 84vh;
+}
+.tag {
+  display: inline-block; border: 1px solid var(--line); color: #c6ffe2;
+  background: rgba(77, 255, 159, .1); padding: 8px 12px; border-radius: 999px; font-size: .85rem;
+}
+h1 { font-size: clamp(2rem, 4vw, 3.5rem); line-height: 1.08; margin: 12px 0; }
+h1 span, h2 span { color: var(--green); }
+.sub { color: var(--muted); font-size: 1.05rem; max-width: 640px; }
+.hero-right img {
+  width: 100%; border-radius: 22px; border: 1px solid var(--line);
+  box-shadow: 0 20px 70px rgba(0,0,0,.35);
+}
+.cta-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+.btn {
+  display: inline-block; text-decoration: none; padding: 12px 18px; border-radius: 12px;
+  font-weight: 700; transition: .25s ease;
+}
+.btn-main { background: var(--green); color: #04200f; }
+.btn-main:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(77,255,159,.28); }
+.btn-ghost { border: 1px solid var(--line); color: #d8fce9; }
+.btn-ghost:hover { background: rgba(77,255,159,.1); }
+
+.section { padding: 72px 0; }
+h2 { font-size: clamp(1.6rem, 2.5vw, 2.4rem); margin: 0 0 16px; }
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.card {
+  background: var(--card); border: 1px solid var(--line); border-radius: 18px; overflow: hidden;
+  transition: .25s ease; transform: translateY(0);
+}
+.card:hover { transform: translateY(-6px); }
+.card img { width: 100%; height: 190px; object-fit: cover; }
+.card h3 { margin: 14px 14px 8px; }
+.card p { margin: 0 14px 18px; color: var(--muted); }
+
+.split { display: grid; grid-template-columns: 1.2fr .8fr; gap: 20px; align-items: stretch; }
+.split ul { color: var(--muted); line-height: 1.9; padding-left: 20px; }
+.glass {
+  background: linear-gradient(180deg, rgba(77,255,159,.14), rgba(77,255,159,.05));
+  border: 1px solid var(--line); border-radius: 18px; padding: 22px;
+}
+.glass p { color: #d7f9e8; }
+
+.timeline { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.step {
+  background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px;
+  display: flex; gap: 12px; align-items: flex-start;
+}
+.step span {
+  width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+  background: rgba(77,255,159,.18); color: var(--green); font-weight: 800;
+}
+.step p { margin: 3px 0 0; color: var(--muted); }
+
+.final { text-align: center; padding-bottom: 90px; }
+footer { text-align: center; color: #8eb1a0; padding: 26px; border-top: 1px solid var(--line); }
+
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 980px) {
+  .hero, .split { grid-template-columns: 1fr; }
+  .cards { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 640px) {
+  nav { display: none; }
+  .cards, .timeline { grid-template-columns: 1fr; }
+  .btn { width: 100%; text-align: center; }
+}

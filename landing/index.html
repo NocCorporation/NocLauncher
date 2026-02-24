@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NocLauncher — официальный лаунчер Minecraft Java + Bedrock</title>
+  <meta name="description" content="NocLauncher — быстрый и защищённый лаунчер для Minecraft Java и Bedrock. Удобный интерфейс, инструменты, авто-восстановление и всё в одном месте." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#top">NocLauncher</a>
+    <nav>
+      <a href="#features">Преимущества</a>
+      <a href="#security">Защита</a>
+      <a href="#cta">Скачать</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero reveal">
+      <div class="hero-left">
+        <p class="tag">Официально от NocCorporation</p>
+        <h1>Лаунчер, который <span>реально удобный</span>, быстрый и защищённый</h1>
+        <p class="sub">NocLauncher объединяет Minecraft Java + Bedrock в одном красивом интерфейсе: быстрый старт, полезные инструменты, контроль целостности и минимальный гемор с настройкой.</p>
+        <div class="cta-row">
+          <a class="btn btn-main" href="https://github.com/NocCorporation/NocLauncher/releases/latest" target="_blank" rel="noopener">Скачать последнюю версию</a>
+          <a class="btn btn-ghost" href="https://github.com/NocCorporation/NocLauncher" target="_blank" rel="noopener">Перейти в GitHub</a>
+        </div>
+      </div>
+      <div class="hero-right parallax" data-depth="20">
+        <img src="assets/hero.png" alt="NocLauncher preview" />
+      </div>
+    </section>
+
+    <section id="features" class="section reveal">
+      <h2>Почему выбирают <span>NocLauncher</span></h2>
+      <div class="cards">
+        <article class="card">
+          <img src="assets/pip.png" alt="Интерфейс" />
+          <h3>Современный UI</h3>
+          <p>Чистый, понятный и приятный интерфейс. Всё важное под рукой — без перегруза и хаоса.</p>
+        </article>
+        <article class="card">
+          <img src="assets/zv.png" alt="Стабильность" />
+          <h3>Java + Bedrock в одном месте</h3>
+          <p>Быстро переключайся между режимами, запускай нужные инструменты и не трать время на ручную возню.</p>
+        </article>
+        <article class="card">
+          <img src="assets/hero.png" alt="Производительность" />
+          <h3>Оптимизированный запуск</h3>
+          <p>Продуманный старт и улучшенная стабильность. Лаунчер заточен под реальный ежедневный геймплей.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="security" class="section split reveal">
+      <div>
+        <h2>Сильная защита и восстановление</h2>
+        <ul>
+          <li>Проверка целостности критичных файлов перед запуском</li>
+          <li>Автозамена файлов по манифесту из чистого набора</li>
+          <li>Карантин подозрительных модификаций и подробные логи</li>
+          <li>Подготовка к запуску Bedrock с минимальными ручными действиями</li>
+        </ul>
+      </div>
+      <div class="glass">
+        <h3>Важное</h3>
+        <p>Если Windows Defender/SmartScreen показывает предупреждение, это часто связано с подписью и репутацией нового файла. Скачивай только из официального Releases и сверяй SHA256.</p>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <h2>Детали, которые важны в реальном использовании</h2>
+      <div class="timeline">
+        <div class="step"><span>01</span><p>Быстрая установка и понятный старт без лишней ручной настройки.</p></div>
+        <div class="step"><span>02</span><p>Интеграция инструментов для Bedrock/Version без разрыва пользовательского сценария.</p></div>
+        <div class="step"><span>03</span><p>Логика защиты работает до запуска, а не «постфактум» после проблемы.</p></div>
+        <div class="step"><span>04</span><p>Регулярные обновления и активная доработка под реальные кейсы.</p></div>
+      </div>
+    </section>
+
+    <section id="cta" class="section final reveal">
+      <h2>Готов запускаться?</h2>
+      <p>Скачай свежий релиз и попробуй NocLauncher в деле.</p>
+      <div class="cta-row">
+        <a class="btn btn-main" href="https://github.com/NocCorporation/NocLauncher/releases/latest" target="_blank" rel="noopener">Скачать</a>
+        <a class="btn btn-ghost" href="https://github.com/NocCorporation/NocLauncher" target="_blank" rel="noopener">GitHub репозиторий</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>© NocCorporation — NocLauncher</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
