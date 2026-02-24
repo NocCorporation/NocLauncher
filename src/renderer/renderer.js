@@ -2427,12 +2427,7 @@ function wireUI() {
     try {
       document.querySelectorAll('.sbNav .sbItem').forEach(b => b.classList.toggle('active', b.id === 'btnInstrumente'));
     } catch (_) {}
-    const r = await window.noc?.instrumenteOpen?.();
-    if (r?.ok) {
-      setStatus('Дополнение: инструмент запущен.');
-    } else {
-      setStatus(`Дополнение: ${r?.error || 'не удалось запустить инструмент'}`);
-    }
+    openModal('modalVersionToolPick');
   });
 
   // Library tabs
@@ -2566,7 +2561,11 @@ function wireUI() {
   $('#btnBedrockSkins')?.addEventListener('click', () => openBedrockContent('skins'));
   $('#btnBedrockLibrary')?.addEventListener('click', () => openBedrockContent('packs'));
   $('#btnBedrockAddons')?.addEventListener('click', async () => {
-    openModal('modalVersionToolPick');
+    const url = 'https://www.curseforge.com/minecraft-bedrock';
+    const r = await window.noc?.webOpen?.({ key: 'bedrock-addons', title: 'Bedrock Addons', url });
+    if (!r?.ok) {
+      try { await window.noc?.shellOpenExternal?.(url); } catch (_) {}
+    }
   });
 
   $('#btnVersionToolNew')?.addEventListener('click', async () => {
