@@ -5197,13 +5197,22 @@ ipcMain.handle('bedrock:launch', async () => {
       integrity = integrityAfter;
 
       if (!integrityAfter?.ok) {
-        return {
-          ok: false,
-          error: 'Обнаружены изменения системных/критичных файлов. Запущено восстановление (подтверди UAC), затем запусти игру повторно.',
-          integrity,
-          repair,
-          logPath: bedrockLogPath || ''
-        };
+        const left = Array.isArray(integrityAfter?.mismatches) ? integrityAfter.mismatches : [];
+        const onlyAppxLeft = left.length > 0 && left.every(m => isBedrockAppxInstallPath(m?.path || ''));
+
+        // If only WindowsApps/AppX targets are still unresolved, don't hard-block launch.
+        // On some systems these paths are virtualized/hidden and immediate re-check can show false negatives.
+        if (!onlyAppxLeft) {
+          return {
+            ok: false,
+            error: 'Обнаружены изменения системных/критичных файлов. Запущено восстановление (подтверди UAC), затем запусти игру повторно.',
+            integrity,
+            repair,
+            logPath: bedrockLogPath || ''
+          };
+        }
+
+        appendBedrockLaunchLog(`WARN: continuing launch with unresolved appx-only mismatches=${JSON.stringify(left)}`);
       }
     }
 
