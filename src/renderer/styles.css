@@ -1,4 +1,4 @@
-/* =========================================================
+﻿/* =========================================================
    NocLauncher UI Redesign (Minecraft Launcher inspired)
    - Dark sidebar + top tabs + hero + bottom play bar
    - Consistent modal / forms styling
@@ -18,12 +18,12 @@
 
 :root{
   --font: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI Variable", "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
-  --bg: #0f2a20;
-  --sidebar: #14382b;
-  --sidebar2: #102d23;
-  --panel: #173d2f;
-  --panel2: #1c4a39;
-  --panel3: #133528;
+  --bg: #151515;
+  --sidebar: #1e1e1e;
+  --sidebar2: #181818;
+  --panel: #242424;
+  --panel2: #2b2b2b;
+  --panel3: #1c1c1c;
 
   --border: rgba(168,255,220,.20);
   --border2: rgba(168,255,220,.12);
@@ -32,8 +32,8 @@
   --muted: rgba(228,255,244,.78);
   --muted2: rgba(210,245,228,.62);
 
-  --green: #34d17b;
-  --green2: #24b667;
+  --green: #ff82c8;
+  --green2: #f062b6;
   --danger: #ff6b6b;
 
   --radius: 16px;
@@ -47,7 +47,10 @@
 *{ box-sizing: border-box; }
 html, body{ height: 100%; margin: 0; }
 body{
-  background: radial-gradient(1200px 700px at 20% -10%, rgba(80,210,152,.24), transparent 60%), var(--bg);
+  background:
+    radial-gradient(1200px 700px at 20% -10%, rgba(255,170,220,.18), transparent 60%),
+    url("img/zv.png") center / cover no-repeat fixed,
+    var(--bg);
   color: var(--text);
   font-family: var(--font);
   line-height: 1.4;
@@ -104,7 +107,7 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible{
-  outline: 2px solid rgba(47,191,84,.55);
+  outline: 2px solid rgba(255,140,210,.65);
   outline-offset: 2px;
 }
 
@@ -160,7 +163,7 @@ textarea.ta{
   height: 34px;
   padding: 0 12px;
   border-radius: 10px;
-  background: linear-gradient(180deg, rgba(47,191,84,.95), rgba(38,168,72,.95));
+  background: linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.26)), url("img/zv.png") center / cover no-repeat;
   border: 1px solid rgba(0,0,0,.25);
   box-shadow: 0 10px 24px rgba(0,0,0,.35);
   color: #0b1a0f;
@@ -194,8 +197,8 @@ textarea.ta{
 .chipSmall{ height: 30px; padding: 0 10px; border-radius: 9px; font-size: 12px; }
 
 .chip.active{
-  background: rgba(47,191,84,.12);
-  border-color: rgba(47,191,84,.30);
+  background: rgba(0,0,0,.18);
+  border-color: rgba(255,190,230,.36);
 }
 .selectMini{
   height: 34px;
@@ -266,13 +269,13 @@ textarea.ta{
   grid-template-columns: clamp(220px, 22vw, 288px) 1fr;
   border-radius: 20px;
   overflow: hidden;
-  border: 1px solid rgba(168,255,220,.14);
-  box-shadow: 0 24px 60px rgba(5,26,18,.45);
-  background: linear-gradient(180deg, rgba(21,57,43,.72), rgba(16,45,35,.78));
+  border: 1px solid rgba(255,190,230,.20);
+  box-shadow: 0 24px 60px rgba(30,10,24,.45);
+  background: linear-gradient(180deg, rgba(0,0,0,.40), rgba(0,0,0,.46)), url("img/zv.png") center / cover no-repeat;
 }
 
 .sidebar{
-  background: linear-gradient(180deg, var(--sidebar), var(--sidebar2));
+  background: linear-gradient(180deg, rgba(0,0,0,.34), rgba(0,0,0,.42)), url("img/zv.png") center / cover no-repeat;
   border-right: 1px solid var(--border2);
   padding: 14px 12px;
   display: flex;
@@ -290,7 +293,7 @@ textarea.ta{
   padding: 6px 8px;
   min-height: 64px;
   border-radius: 14px;
-  background: rgba(120,235,186,.08);
+  background: rgba(0,0,0,.20);
   border: 1px solid var(--border2);
 }
 .sbLogo{
@@ -334,12 +337,12 @@ textarea.ta{
   transition: background 140ms var(--ease), transform 140ms var(--ease), border-color 140ms var(--ease);
 }
 .sbItem:hover{
-  background: rgba(120,235,186,.10);
+  background: rgba(0,0,0,.22);
   transform: translateY(-1px);
 }
 .sbItem.active{
-  background: rgba(52,209,123,.20);
-  border-color: rgba(120,235,186,.34);
+  background: rgba(0,0,0,.24);
+  border-color: rgba(255,190,230,.30);
   color: rgba(255,255,255,.96);
 }
 .sbIco{ width: 22px; display:grid; place-items:center; opacity: .92; }
@@ -367,8 +370,8 @@ textarea.ta{
 }
 .sbGame:hover{ transform: translateY(-1px); background: rgba(255,255,255,.06); }
 .sbGame.active{
-  border-color: rgba(47,191,84,.38);
-  background: rgba(47,191,84,.10);
+  border-color: rgba(255,190,230,.40);
+  background: rgba(0,0,0,.18);
 }
 .sbGameTitle{ font-weight: 900; font-size: 13px; }
 .sbGameHint{ margin-top: 3px; color: var(--muted2); font-size: 12px; }
@@ -527,13 +530,13 @@ textarea.ta{
 .sbPill{
   height: 34px;
   border-radius: 12px;
-  background: rgba(120,235,186,.08);
+  background: linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.26)), url("img/zv.png") center / cover no-repeat;
   border: 1px solid var(--border2);
   color: var(--text);
   font-weight: 800;
   transition: transform 140ms var(--ease), background 140ms var(--ease), border-color 140ms var(--ease);
 }
-.sbPill:hover{ background: rgba(120,235,186,.16); transform: translateY(-1px); }
+.sbPill:hover{ background: linear-gradient(180deg, rgba(0,0,0,.12), rgba(0,0,0,.22)), url("img/zv.png") center / cover no-repeat; transform: translateY(-1px); }
 
 .mainArea{
   display: flex;
@@ -550,7 +553,7 @@ textarea.ta{
   gap: 16px;
   padding: 10px 16px;
   border-bottom: 1px solid var(--border2);
-  background: linear-gradient(180deg, rgba(82,206,153,.14), rgba(32,94,70,.18));
+  background: linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,.36)), url("img/zv.png") center / cover no-repeat;
 }
 
 .topLeft{ display:flex; align-items:baseline; gap: 16px; min-width: 0; }
@@ -587,8 +590,8 @@ textarea.ta{
   transform: translateY(-1px);
 }
 .tabBtn.active{
-  background: rgba(90,220,166,.16);
-  border-color: rgba(140,245,204,.22);
+  background: rgba(0,0,0,.24);
+  border-color: rgba(255,190,230,.30);
   color: rgba(255,255,255,.96);
 }
 
@@ -597,13 +600,13 @@ textarea.ta{
   height: 34px;
   padding: 0 12px;
   border-radius: 12px;
-  background: rgba(120,235,186,.08);
+  background: linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.26)), url("img/zv.png") center / cover no-repeat;
   border: 1px solid var(--border2);
   color: rgba(255,255,255,.95);
   font-weight: 900;
   transition: transform 140ms var(--ease), background 140ms var(--ease);
 }
-.topPill:hover{ background: rgba(120,235,186,.15); transform: translateY(-1px); }
+.topPill:hover{ background: linear-gradient(180deg, rgba(0,0,0,.12), rgba(0,0,0,.22)), url("img/zv.png") center / cover no-repeat; transform: translateY(-1px); }
 .bedrockOnlyTop{ display: none; }
 body.mode-bedrock .bedrockOnlyTop{ display: inline-flex; align-items: center; }
 
@@ -791,7 +794,7 @@ body.mode-bedrock .bedrockOnlyTop{ display: inline-flex; align-items: center; }
 .dlBar{
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, rgba(47,191,84,1), rgba(90,255,200,1));
+  background: linear-gradient(90deg, rgba(0,0,0,.22), rgba(0,0,0,.32)), url("img/zv.png") center / cover no-repeat;
 }
 .dlFoot{
   display:flex;
@@ -822,8 +825,8 @@ body.mode-bedrock .bedrockOnlyTop{ display: inline-flex; align-items: center; }
   border: 1px solid var(--border2);
 }
 .modeBadge{
-  background: rgba(47,191,84,.10);
-  border-color: rgba(47,191,84,.22);
+  background: rgba(0,0,0,.18);
+  border-color: rgba(255,190,230,.30);
 }
 
 /* =========================================================
@@ -942,8 +945,8 @@ body.mode-bedrock .bedrockOnlyTop{ display: inline-flex; align-items: center; }
 }
 
 .bbMenuItem.active{
-  background: rgba(47,191,84,.16);
-  border-color: rgba(47,191,84,.30);
+  background: rgba(0,0,0,.24);
+  border-color: rgba(255,190,230,.36);
 }
 
 .bbCenter{ display:flex; justify-content:flex-start; flex: 0 0 auto; }
@@ -953,7 +956,7 @@ body.mode-bedrock .bedrockOnlyTop{ display: inline-flex; align-items: center; }
   min-width: 260px;
   padding: 0 22px;
   border-radius: 12px;
-  background: linear-gradient(180deg, rgba(47,191,84,1), rgba(38,168,72,1));
+  background: linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.28)), url("img/zv.png") center / cover no-repeat;
   border: 1px solid rgba(0,0,0,.30);
   box-shadow: 0 18px 40px rgba(0,0,0,.38);
   color: #08140c;
@@ -1380,3 +1383,4 @@ body.mode-bedrock #modeBedrock,
   overflow-y: auto;
   padding-right: 10px;
 }
+
