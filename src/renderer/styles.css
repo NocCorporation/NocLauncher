@@ -622,12 +622,14 @@ body.mode-bedrock .bedrockOnlyTop{ display: inline-flex; align-items: center; }
 .heroPetals .petal{
   position: absolute;
   top: -14%;
-  width: 14px;
-  height: 10px;
-  border-radius: 12px 10px 12px 10px;
-  background: linear-gradient(135deg, rgba(255,222,240,.95), rgba(255,152,206,.9));
-  opacity: .72;
-  filter: drop-shadow(0 0 4px rgba(255,150,210,.26));
+  width: 22px;
+  height: 22px;
+  background-image: url("img/pip.png");
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: .86;
+  filter: drop-shadow(0 0 6px rgba(255,150,210,.28));
   animation: heroPetalFall linear infinite;
 }
 .heroPetals .petal:nth-child(1){ left: 6%; animation-duration: 8.4s; animation-delay: -2.2s; }
