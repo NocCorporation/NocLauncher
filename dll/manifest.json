@@ -1,28 +1,23 @@
 {
-  "generatedAt": "2026-02-24T13:02:24.508Z",
-  "sourceConfig": "C:\\Users\\kiril\\AppData\\Roaming\\NocLauncher\\userData\\noclauncher.json",
+  "generatedAt": "2026-02-24T13:08:27.332Z",
+  "source": "fresh_system_snapshot",
+  "installLocation": "C:\\Program Files\\WindowsApps\\MICROSOFT.MINECRAFTUWP_1.26.101.0_x64__8wekyb3d8bbwe",
   "copiedCount": 3,
   "missedCount": 0,
   "copied": [
     {
-      "bucket": "integrity",
       "targetPath": "C:\\Windows\\System32\\Windows.ApplicationModel.Store.dll",
       "sha256": "b22aaee449a9fa4eac638565d8f539f9102a9771c1d247d592b87c0d1f7dfeb9",
-      "cleanPath": "C:\\Users\\kiril\\AppData\\Roaming\\NocLauncher\\userData\\bedrock-clean\\integrity\\b22aaee449a9fa4eac638565d8f539f9102a9771c1d247d592b87c0d1f7dfeb9_Windows.ApplicationModel.Store.dll",
       "projectPath": "C:\\Users\\kiril\\Desktop\\noc1\\dll\\integrity__b22aaee449a9fa4eac638565d8f539f9102a9771c1d247d592b87c0d1f7dfeb9_Windows.ApplicationModel.Store.dll"
     },
     {
-      "bucket": "integrity",
       "targetPath": "C:\\Windows\\SysWOW64\\Windows.ApplicationModel.Store.dll",
       "sha256": "59dae81018c960c9210467b33f1a3033ef6c266d64eb96edf72b9de7c4339f81",
-      "cleanPath": "C:\\Users\\kiril\\AppData\\Roaming\\NocLauncher\\userData\\bedrock-clean\\integrity\\59dae81018c960c9210467b33f1a3033ef6c266d64eb96edf72b9de7c4339f81_Windows.ApplicationModel.Store.dll",
       "projectPath": "C:\\Users\\kiril\\Desktop\\noc1\\dll\\integrity__59dae81018c960c9210467b33f1a3033ef6c266d64eb96edf72b9de7c4339f81_Windows.ApplicationModel.Store.dll"
     },
     {
-      "bucket": "integrity",
       "targetPath": "C:\\Program Files\\WindowsApps\\MICROSOFT.MINECRAFTUWP_1.26.101.0_x64__8wekyb3d8bbwe\\vcruntime140_1.dll",
       "sha256": "15b2223804ac8a3a10a93233618768413f280c08055cf6e2917dfbc9938246d6",
-      "cleanPath": "C:\\Users\\kiril\\AppData\\Roaming\\NocLauncher\\userData\\bedrock-clean\\integrity\\15b2223804ac8a3a10a93233618768413f280c08055cf6e2917dfbc9938246d6_vcruntime140_1.dll",
       "projectPath": "C:\\Users\\kiril\\Desktop\\noc1\\dll\\integrity__15b2223804ac8a3a10a93233618768413f280c08055cf6e2917dfbc9938246d6_vcruntime140_1.dll"
     }
   ],
