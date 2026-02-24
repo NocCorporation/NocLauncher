@@ -5587,6 +5587,21 @@ ipcMain.handle('bedrock:launch', async () => {
     bedrockLogPath = appendBedrockLaunchLog('INFO: Bedrock launch requested');
     if (bedrockLogPath) sendMcState('logpath', { logDir: path.dirname(bedrockLogPath), logPath: bedrockLogPath });
 
+    // Early preflight gate: if Bedrock is not installed, skip any repair/replacement flows.
+    const pre = await bedrockPreflightChecks();
+    appendBedrockLaunchLog(`INFO: preflight_early=${JSON.stringify(pre)}`);
+    if (!pre?.ok) {
+      return { ok: false, error: `Preflight не выполнен: ${pre?.error || 'unknown'}`, logPath: bedrockLogPath || '' };
+    }
+    if (!pre?.details?.minecraftInstalled) {
+      try { await shell.openExternal('ms-windows-store://pdp/?PFN=Microsoft.MinecraftUWP_8wekyb3d8bbwe'); } catch (_) {}
+      return {
+        ok: false,
+        error: 'Minecraft for Windows не установлен. Открыл Microsoft Store — установи игру и попробуй снова.',
+        logPath: bedrockLogPath || ''
+      };
+    }
+
     // Mods baseline restore: enforce clean DLL set before every launch.
     try {
       const modsRepair = restoreBedrockModsBaseline();
