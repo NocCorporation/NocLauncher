@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-02-24T13:08:27.332Z",
-  "source": "fresh_system_snapshot",
+  "generatedAt": "2026-02-24T13:36:58.444Z",
+  "source": "fresh_system_snapshot_plus_mods",
   "installLocation": "C:\\Program Files\\WindowsApps\\MICROSOFT.MINECRAFTUWP_1.26.101.0_x64__8wekyb3d8bbwe",
-  "copiedCount": 3,
+  "copiedCount": 4,
   "missedCount": 0,
   "copied": [
     {
@@ -19,6 +19,11 @@
       "targetPath": "C:\\Program Files\\WindowsApps\\MICROSOFT.MINECRAFTUWP_1.26.101.0_x64__8wekyb3d8bbwe\\vcruntime140_1.dll",
       "sha256": "15b2223804ac8a3a10a93233618768413f280c08055cf6e2917dfbc9938246d6",
       "projectPath": "C:\\Users\\kiril\\Desktop\\noc1\\dll\\integrity__15b2223804ac8a3a10a93233618768413f280c08055cf6e2917dfbc9938246d6_vcruntime140_1.dll"
+    },
+    {
+      "targetPath": "C:\\Users\\kiril\\AppData\\Roaming\\Minecraft Bedrock\\mods\\mods.dll",
+      "sha256": "340e8e7dbdd78b55bfec23fed43012648906e88ea14ef54891dea83d44963074",
+      "projectPath": "C:\\Users\\kiril\\Desktop\\noc1\\dll\\mods__340e8e7dbdd78b55bfec23fed43012648906e88ea14ef54891dea83d44963074_mods.dll"
     }
   ],
   "missed": []

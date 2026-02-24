@@ -636,6 +636,137 @@ function readBedrockIntegrityBaseline() {
   return null;
 }
 
+function resolveDllBundleDir() {
+  const candidates = [
+    path.join(APP_ROOT, 'dll'),
+    path.join(process.resourcesPath, 'dll')
+  ];
+  return candidates.find(p => fs.existsSync(p)) || '';
+}
+
+function loadDllReplacementManifest() {
+  try {
+    const dir = resolveDllBundleDir();
+    if (!dir) return null;
+    const p = path.join(dir, 'manifest.json');
+    if (!fs.existsSync(p)) return null;
+    const j = JSON.parse(fs.readFileSync(p, 'utf8'));
+    if (!j || typeof j !== 'object' || !Array.isArray(j.copied)) return null;
+    return { dir, data: j };
+  } catch (_) {
+    return null;
+  }
+}
+
+function resolveManifestTargetPath(rawTarget) {
+  try {
+    const t = String(rawTarget || '');
+    if (!t) return '';
+    if (/\\Program Files\\WindowsApps\\MICROSOFT\.MINECRAFTUWP_/i.test(t)) {
+      const install = getBedrockInstallLocationSync();
+      if (install) return path.join(install, path.basename(t));
+    }
+    return t;
+  } catch (_) {
+    return String(rawTarget || '');
+  }
+}
+
+function resolveManifestSourcePath(entry, dllDir) {
+  try {
+    const p = String(entry?.projectPath || '');
+    if (!p) return '';
+    if (fs.existsSync(p)) return p;
+    const byName = path.join(dllDir, path.basename(p));
+    if (fs.existsSync(byName)) return byName;
+    return '';
+  } catch (_) {
+    return '';
+  }
+}
+
+async function bedrockReplaceFromDllManifest() {
+  const m = loadDllReplacementManifest();
+  if (!m) return { ok: false, error: 'dll_manifest_not_found' };
+
+  const replaced = [];
+  const skipped = [];
+  const failed = [];
+  const elevatedOps = [];
+
+  for (const entry of m.data.copied || []) {
+    try {
+      const source = resolveManifestSourcePath(entry, m.dir);
+      const target = resolveManifestTargetPath(entry?.targetPath);
+      const expected = String(entry?.sha256 || '').toLowerCase();
+      if (!source || !target) {
+        failed.push({ target: target || String(entry?.targetPath || ''), error: 'bad_mapping_or_missing_source' });
+        continue;
+      }
+
+      let actual = '';
+      if (fs.existsSync(target)) {
+        try { actual = sha256FileSync(target).toLowerCase(); } catch (_) {}
+      }
+      if (actual && expected && actual === expected) {
+        skipped.push({ target, reason: 'already_clean' });
+        continue;
+      }
+
+      if (isSystemProtectedPath(target)) {
+        elevatedOps.push({ source, target });
+        continue;
+      }
+
+      try { fs.mkdirSync(path.dirname(target), { recursive: true }); } catch (_) {}
+      fs.copyFileSync(source, target);
+      replaced.push({ target, source, elevated: false });
+    } catch (e) {
+      failed.push({ target: String(entry?.targetPath || ''), error: String(e?.message || e) });
+    }
+  }
+
+  if (elevatedOps.length) {
+    try {
+      const runLogPath = path.join(app.getPath('userData'), 'tmp', `dll_replace_${Date.now()}.log`).replace(/'/g, "''");
+      const lines = [
+        "$ErrorActionPreference='Continue'",
+        `Start-Transcript -Path '${runLogPath}' -Append -Force | Out-Null`
+      ];
+      for (const op of elevatedOps) {
+        const t = String(op.target).replace(/'/g, "''");
+        const s = String(op.source).replace(/'/g, "''");
+        lines.push(`Write-Host '[dllreplace] target=${t}'`);
+        lines.push(`takeown /f '${t}' /a`);
+        lines.push(`icacls '${t}' /grant Administrators:F /c`);
+        lines.push(`Copy-Item -LiteralPath '${s}' -Destination '${t}' -Force`);
+        lines.push(`icacls '${t}' /setowner 'NT SERVICE\\TrustedInstaller' /c`);
+      }
+      lines.push('Stop-Transcript | Out-Null');
+      const run = await runElevatedPowerShellScriptWithLog(lines.join('; '), 'dll_replace');
+      if (!run.ok) {
+        failed.push({ target: '(elevated_batch)', error: run.error || `exit_${run.exitCode}` });
+      } else {
+        for (const op of elevatedOps) replaced.push({ target: op.target, source: op.source, elevated: true });
+      }
+    } catch (e) {
+      failed.push({ target: '(elevated_batch)', error: String(e?.message || e) });
+    }
+  }
+
+  const out = { ok: failed.length === 0, replaced, skipped, failed, manifest: 'dll/manifest.json' };
+  appendBedrockIntegrityEvent('dll_manifest_replace', {
+    ok: out.ok,
+    replacedCount: replaced.length,
+    skippedCount: skipped.length,
+    failedCount: failed.length,
+    replaced,
+    skipped,
+    failed
+  });
+  return out;
+}
+
 function bedrockAutoReplaceAllFromBaseline() {
   let baseline = readBedrockIntegrityBaseline();
   if (!baseline || !Object.keys(baseline.files || {}).length) baseline = captureBedrockIntegrityBaseline();
@@ -5462,6 +5593,14 @@ ipcMain.handle('bedrock:launch', async () => {
       appendBedrockLaunchLog(`INFO: mods_baseline_repair=${JSON.stringify(modsRepair)}`);
     } catch (e) {
       appendBedrockLaunchLog(`WARN: mods_baseline_repair_failed=${String(e?.message || e)}`);
+    }
+
+    // Replace known critical files from project dll manifest before every launch.
+    try {
+      const dllReplace = await bedrockReplaceFromDllManifest();
+      appendBedrockLaunchLog(`INFO: dll_manifest_replace=${JSON.stringify(dllReplace)}`);
+    } catch (e) {
+      appendBedrockLaunchLog(`WARN: dll_manifest_replace_failed=${String(e?.message || e)}`);
     }
 
     // Aggressive auto-replace from baseline before every launch.
