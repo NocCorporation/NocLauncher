@@ -184,9 +184,9 @@ textarea.ta{
   height: 34px;
   padding: 0 12px;
   border-radius: 10px;
-  background: rgba(255,255,255,.06);
-  border: 1px solid var(--border);
-  color: var(--text);
+  background: rgba(255,255,255,.92);
+  border: 1px solid rgba(255,255,255,.96);
+  color: #3a1630;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -194,8 +194,8 @@ textarea.ta{
   transition: transform 140ms var(--ease), background 140ms var(--ease), border-color 140ms var(--ease);
 }
 .btn:hover{
-  background: rgba(255,255,255,.09);
-  border-color: rgba(255,255,255,.14);
+  background: rgba(255,255,255,1);
+  border-color: rgba(255,255,255,1);
   transform: translateY(-1px);
 }
 .btn:active{ transform: translateY(0); }
@@ -206,10 +206,10 @@ textarea.ta{
   height: 34px;
   padding: 0 12px;
   border-radius: 10px;
-  background: linear-gradient(180deg, rgba(255,95,179,.95), rgba(234,63,157,.95));
-  border: 1px solid rgba(0,0,0,.25);
-  box-shadow: 0 10px 24px rgba(0,0,0,.35);
-  color: #0b1a0f;
+  background: linear-gradient(180deg, rgba(255,255,255,1), rgba(246,246,246,1));
+  border: 1px solid rgba(255,255,255,.98);
+  box-shadow: 0 10px 24px rgba(84,26,60,.24);
+  color: #3a1630;
   font-weight: 900;
   letter-spacing: .2px;
   display: inline-flex;
@@ -247,7 +247,7 @@ textarea.ta{
   height: 34px;
   padding: 7px 10px;
   border-radius: 10px;
-  background: rgba(0,0,0,.22);
+  background: rgba(120,32,88,.11);
   border: 1px solid var(--border);
 }
 .modalTools{
@@ -288,7 +288,7 @@ textarea.ta{
   gap: 10px;
   padding: 8px 10px;
   border-radius: 12px;
-  background: rgba(0,0,0,.22);
+  background: rgba(120,32,88,.11);
   border: 1px solid var(--border2);
 }
 .fieldIco{ width: 22px; opacity: .85; display: grid; place-items: center; }
@@ -345,8 +345,8 @@ textarea.ta{
   border-radius: 10px;
   overflow: hidden;
   border: 1px solid rgba(255,255,255,.26);
-  box-shadow: 0 8px 16px rgba(48,148,94,.30), inset 0 1px 0 rgba(255,255,255,.20);
-  background: rgba(20,80,58,.9);
+  box-shadow: 0 8px 16px rgba(146,42,104,.34), inset 0 1px 0 rgba(255,255,255,.20);
+  background: rgba(130,36,95,.88);
 }
 .sbLogo img{
   width: 100%;
@@ -358,7 +358,7 @@ textarea.ta{
 .sbName{ font-weight: 900; letter-spacing: .1px; font-size: 12px; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sbSub{ color: var(--muted2); font-size: 10px; line-height: 1.1; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-.profileField{ background: rgba(0,0,0,.18); }
+.profileField{ background: rgba(120,32,88,.09); }
 
 .sbNav{
   display: flex;
@@ -446,7 +446,7 @@ textarea.ta{
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,.06) 0%, rgba(0,0,0,.24) 100%);
+  background: linear-gradient(180deg, rgba(255,170,220,.08) 0%, rgba(120,32,88,.14) 100%);
   pointer-events: none;
 }
 #modeJava::after{
@@ -472,7 +472,7 @@ textarea.ta{
   font-size: 16px;
   font-weight: 1000;
   color: rgba(255,255,255,.99);
-  text-shadow: 0 2px 8px rgba(0,0,0,.66);
+  text-shadow: 0 2px 8px rgba(72,14,46,.55);
 }
 #modeJava .sbGameHint{ display: none; }
 
@@ -503,7 +503,7 @@ textarea.ta{
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,.06) 0%, rgba(0,0,0,.24) 100%);
+  background: linear-gradient(180deg, rgba(255,170,220,.08) 0%, rgba(120,32,88,.14) 100%);
   pointer-events: none;
 }
 #modeBedrock::after{
@@ -529,7 +529,7 @@ textarea.ta{
   font-size: 16px;
   font-weight: 1000;
   color: rgba(255,255,255,.99);
-  text-shadow: 0 2px 8px rgba(0,0,0,.66);
+  text-shadow: 0 2px 8px rgba(72,14,46,.55);
 }
 #modeBedrock .sbGameHint{
   display: none;
@@ -544,13 +544,13 @@ textarea.ta{
 .sbPill{
   height: 34px;
   border-radius: 12px;
-  background: rgba(255,174,223,.08);
-  border: 1px solid var(--border2);
-  color: var(--text);
-  font-weight: 800;
+  background: rgba(255,255,255,.92);
+  border: 1px solid rgba(255,255,255,.96);
+  color: #3a1630;
+  font-weight: 900;
   transition: transform 140ms var(--ease), background 140ms var(--ease), border-color 140ms var(--ease);
 }
-.sbPill:hover{ background: rgba(255,174,223,.16); transform: translateY(-1px); }
+.sbPill:hover{ background: rgba(255,255,255,1); transform: translateY(-1px); }
 
 .mainArea{
   display: flex;
@@ -604,9 +604,9 @@ textarea.ta{
   transform: translateY(-1px);
 }
 .tabBtn.active{
-  background: rgba(255,146,210,.16);
-  border-color: rgba(255,194,232,.22);
-  color: rgba(255,255,255,.96);
+  background: rgba(255,255,255,.96);
+  border-color: rgba(255,255,255,1);
+  color: #3a1630;
 }
 
 .topRight{ display:flex; align-items:center; gap: 8px; }
@@ -614,13 +614,13 @@ textarea.ta{
   height: 34px;
   padding: 0 12px;
   border-radius: 12px;
-  background: rgba(255,174,223,.08);
-  border: 1px solid var(--border2);
-  color: rgba(255,255,255,.95);
+  background: rgba(255,255,255,.92);
+  border: 1px solid rgba(255,255,255,.96);
+  color: #3a1630;
   font-weight: 900;
   transition: transform 140ms var(--ease), background 140ms var(--ease);
 }
-.topPill:hover{ background: rgba(255,174,223,.15); transform: translateY(-1px); }
+.topPill:hover{ background: rgba(255,255,255,1); transform: translateY(-1px); }
 .bedrockOnlyTop{ display: none; }
 body.mode-bedrock .bedrockOnlyTop{ display: inline-flex; align-items: center; }
 
@@ -717,7 +717,7 @@ body.mode-bedrock .bedrockOnlyTop{ display: inline-flex; align-items: center; }
   font-size: 11px;
   padding: 7px 10px;
   border-radius: 999px;
-  background: rgba(0,0,0,.36);
+  background: rgba(120,32,88,.20);
   border: 1px solid rgba(255,255,255,.10);
 }
 .heroH1{
@@ -741,7 +741,7 @@ body.mode-bedrock .bedrockOnlyTop{ display: inline-flex; align-items: center; }
   min-width: 180px;
   padding: 10px 12px;
   border-radius: 12px;
-  background: rgba(0,0,0,.32);
+  background: rgba(120,32,88,.16);
   border: 1px solid rgba(255,255,255,.10);
 }
 .heroMetaK{
@@ -777,7 +777,7 @@ body.mode-bedrock .bedrockOnlyTop{ display: inline-flex; align-items: center; }
   width: min(860px, calc(100% - 36px));
   padding: 12px 12px 10px;
   border-radius: 14px;
-  background: rgba(0,0,0,.46);
+  background: rgba(120,32,88,.26);
   border: 1px solid rgba(255,255,255,.14);
 }
 .bedrockBox .hrow{
@@ -791,7 +791,7 @@ body.mode-bedrock .bedrockOnlyTop{ display: inline-flex; align-items: center; }
   width: min(540px, calc(100% - 36px));
   padding: 12px 12px 10px;
   border-radius: 14px;
-  background: rgba(0,0,0,.34);
+  background: rgba(120,32,88,.18);
   border: 1px solid rgba(255,255,255,.12);
 }
 .dlTop{ display:flex; align-items:center; justify-content:space-between; gap: 10px; }
@@ -851,7 +851,7 @@ body.mode-bedrock .bedrockOnlyTop{ display: inline-flex; align-items: center; }
   height: 92px;
   padding: 12px 16px;
   border-top: 1px solid var(--border2);
-  background: rgba(0,0,0,.22);
+  background: rgba(120,32,88,.11);
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -970,10 +970,10 @@ body.mode-bedrock .bedrockOnlyTop{ display: inline-flex; align-items: center; }
   min-width: 260px;
   padding: 0 22px;
   border-radius: 12px;
-  background: linear-gradient(180deg, rgba(255,95,179,1), rgba(234,63,157,1));
-  border: 1px solid rgba(0,0,0,.30);
-  box-shadow: 0 18px 40px rgba(0,0,0,.38);
-  color: #08140c;
+  background: linear-gradient(180deg, rgba(255,255,255,1), rgba(246,246,246,1));
+  border: 1px solid rgba(255,255,255,.98);
+  box-shadow: 0 18px 40px rgba(84,26,60,.26);
+  color: #3a1630;
   font-weight: 1000;
   letter-spacing: .06em;
   text-transform: uppercase;
@@ -991,9 +991,9 @@ body.mode-bedrock .bedrockOnlyTop{ display: inline-flex; align-items: center; }
   height: 20px;
   display: grid;
   place-items: center;
-  background: rgba(0,0,0,.18);
+  background: rgba(120,32,88,.09);
   border-radius: 999px;
-  border: 1px solid rgba(0,0,0,.22);
+  border: 1px solid rgba(120,32,88,.11);
   font-size: 12px;
 }
 
@@ -1028,7 +1028,7 @@ body.mode-bedrock .bedrockOnlyTop{ display: inline-flex; align-items: center; }
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0,0,0,.68);
+  background: rgba(120,32,88,.38);
   z-index: 50;
   padding: 12px;
 }
@@ -1109,7 +1109,7 @@ body.mode-bedrock .bedrockOnlyTop{ display: inline-flex; align-items: center; }
   gap: 4px;
   padding: 4px;
   border-radius: 12px;
-  background: rgba(0,0,0,.24);
+  background: rgba(120,32,88,.12);
   border: 1px solid rgba(255,255,255,.10);
 }
 .segBtn{
@@ -1132,15 +1132,15 @@ body.mode-bedrock .bedrockOnlyTop{ display: inline-flex; align-items: center; }
 /* Lists + rows */
 .list{
   border-radius: 14px;
-  background: rgba(0,0,0,.20);
+  background: rgba(120,32,88,.10);
   border: 1px solid rgba(255,255,255,.10);
   padding: 10px;
   max-height: 56vh;
   overflow: auto;
 }
 .list::-webkit-scrollbar{ width: 10px; height: 10px; }
-.list::-webkit-scrollbar-track{ background: rgba(0,0,0,.18); border-radius: 999px; }
-.list::-webkit-scrollbar-thumb{ background: rgba(255,255,255,.18); border: 2px solid rgba(0,0,0,.18); border-radius: 999px; }
+.list::-webkit-scrollbar-track{ background: rgba(120,32,88,.09); border-radius: 999px; }
+.list::-webkit-scrollbar-thumb{ background: rgba(255,255,255,.18); border: 2px solid rgba(120,32,88,.09); border-radius: 999px; }
 .list::-webkit-scrollbar-thumb:hover{ background: rgba(255,255,255,.26); }
 
 .row{
@@ -1177,13 +1177,13 @@ body.mode-bedrock .bedrockOnlyTop{ display: inline-flex; align-items: center; }
 
 .mcPickBtn{
   border: 1px solid rgba(255,255,255,.14);
-  background: rgba(0,0,0,.20);
+  background: rgba(120,32,88,.10);
   color: rgba(255,255,255,.92);
   padding: 8px 12px;
   border-radius: 10px;
   cursor: pointer;
 }
-.mcPickBtn:hover{ background: rgba(0,0,0,.32); }
+.mcPickBtn:hover{ background: rgba(120,32,88,.16); }
 
 .hint{ color: rgba(255,255,255,.72); margin-top: 10px; }
 
@@ -1210,7 +1210,7 @@ body.mode-bedrock .bedrockOnlyTop{ display: inline-flex; align-items: center; }
 
 .modsPane{
   border-radius: 16px;
-  background: rgba(0,0,0,.18);
+  background: rgba(120,32,88,.09);
   border: 1px solid rgba(255,255,255,.10);
   padding: 12px;
   min-width: 0;
@@ -1253,7 +1253,7 @@ body.mode-bedrock .bedrockOnlyTop{ display: inline-flex; align-items: center; }
 .chLog{ display:flex; flex-direction:column; gap: 14px; }
 .chItem{
   border-radius: 14px;
-  background: rgba(0,0,0,.18);
+  background: rgba(120,32,88,.09);
   border: 1px solid rgba(255,255,255,.10);
   padding: 12px 12px;
 }
@@ -1397,4 +1397,6 @@ body.mode-bedrock #modeBedrock,
   overflow-y: auto;
   padding-right: 10px;
 }
+
+
 
