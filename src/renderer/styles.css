@@ -386,8 +386,8 @@ textarea.ta{
   overflow: hidden;
   background-color: transparent;
   background-image: url("img/java-card-sakura.png");
-  background-size: 118% 132%;
-  background-position: 52% 50%;
+  background-size: 124% 142%;
+  background-position: 48% 50%;
   background-repeat: no-repeat;
   border: 1px solid rgba(255,150,230,.34);
   box-shadow: 0 10px 26px rgba(255,120,220,.18), inset 0 1px 0 rgba(255,255,255,.18);
@@ -395,12 +395,20 @@ textarea.ta{
   align-items: center;
   justify-content: center;
   transition: transform 140ms var(--ease), box-shadow 140ms var(--ease), border-color 140ms var(--ease);
+  animation: javaCardPan 10s ease-in-out infinite alternate;
 }
 #modeJava::before{
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,.06) 0%, rgba(0,0,0,.24) 100%);
+  background-image:
+    linear-gradient(180deg, rgba(0,0,0,.05) 0%, rgba(0,0,0,.22) 100%),
+    url("img/pip.png");
+  background-size: auto, 16px 16px;
+  background-repeat: no-repeat, repeat;
+  background-position: center, 0 0;
+  opacity: .96;
+  animation: cardPetalDrift 14s linear infinite;
   pointer-events: none;
 }
 #modeJava::after{
@@ -443,8 +451,8 @@ textarea.ta{
   overflow: hidden;
   background-color: transparent;
   background-image: url("img/bedrock-card-ui-generated.png");
-  background-size: 114% 132%;
-  background-position: 52% 48%;
+  background-size: 122% 140%;
+  background-position: 54% 45%;
   background-repeat: no-repeat;
   border: 1px solid rgba(130,225,255,.30);
   box-shadow: 0 10px 26px rgba(90,205,255,.15), inset 0 1px 0 rgba(255,255,255,.18);
@@ -452,12 +460,20 @@ textarea.ta{
   align-items: center;
   justify-content: center;
   transition: transform 140ms var(--ease), box-shadow 140ms var(--ease), border-color 140ms var(--ease);
+  animation: bedrockCardPan 11s ease-in-out infinite alternate;
 }
 #modeBedrock::before{
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,.06) 0%, rgba(0,0,0,.24) 100%);
+  background-image:
+    linear-gradient(180deg, rgba(0,0,0,.05) 0%, rgba(0,0,0,.22) 100%),
+    url("img/pip.png");
+  background-size: auto, 14px 14px;
+  background-repeat: no-repeat, repeat;
+  background-position: center, 0 0;
+  opacity: .92;
+  animation: cardPetalDrift 16s linear infinite reverse;
   pointer-events: none;
 }
 #modeBedrock::after{
@@ -487,6 +503,19 @@ textarea.ta{
 }
 #modeBedrock .sbGameHint{
   display: none;
+}
+
+@keyframes javaCardPan{
+  0%   { background-position: 46% 52%; filter: saturate(1.02) brightness(1.00); }
+  100% { background-position: 58% 46%; filter: saturate(1.10) brightness(1.06); }
+}
+@keyframes bedrockCardPan{
+  0%   { background-position: 56% 45%; filter: saturate(1.02) brightness(1.00); }
+  100% { background-position: 44% 54%; filter: saturate(1.12) brightness(1.05); }
+}
+@keyframes cardPetalDrift{
+  0%   { background-position: center, 0 0; }
+  100% { background-position: center, 120px 180px; }
 }
 
 .sbBottom{
