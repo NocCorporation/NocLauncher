@@ -5043,8 +5043,10 @@ ipcMain.handle('bedrock:versionToolOpen', async () => {
     const dir = candidates.find(p => fs.existsSync(p));
     if (!dir) return { ok: false, error: 'version_tool_dir_not_found' };
 
-    const exePath = path.join(dir, 'MCLauncher.exe');
-    if (!fs.existsSync(exePath)) {
+    const preferred = path.join(dir, 'NocLauncher.exe');
+    const fallback = path.join(dir, 'MCLauncher.exe');
+    const exePath = fs.existsSync(preferred) ? preferred : (fs.existsSync(fallback) ? fallback : '');
+    if (!exePath) {
       await shell.openPath(dir);
       return { ok: false, error: 'version_tool_exe_not_found', path: dir };
     }
