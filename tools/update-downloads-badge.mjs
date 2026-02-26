@@ -45,7 +45,7 @@ const latestTotal = latest
 
 const allBadge = {
   schemaVersion: 1,
-  label: 'downloads all releases',
+  label: 'downloads',
   message: String(totalAllReleases),
   color: '0e9f6e',
   namedLogo: 'github'
