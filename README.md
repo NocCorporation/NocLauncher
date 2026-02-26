@@ -16,7 +16,7 @@
   <a href="https://github.com/NocCorporation/NocLauncher/releases/latest">
     <img alt="Downloads All Releases" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/NocCorporation/NocLauncher/main/docs/badges/downloads-total.json&style=flat-square" />
   </a>
-  <img alt="Platform" src="https://img.shields.io/badge/Platform-Windows-4caf50?style=flat-square" />
+  <img alt="Platform" src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-4caf50?style=flat-square" />
   <img alt="License" src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" />
 </p>
 
