@@ -5183,11 +5183,19 @@ ipcMain.handle('bedrock:versionToolOpen', async (_e, payload) => {
       const root = roots.find(p => fs.existsSync(p));
       if (!root) return { ok: false, error: 'instrumente_not_found' };
 
-      const newExe = path.join(root, 'NocLauncher.exe');
-      const oldExe = path.join(root, 'intrumente2', 'NocLauncher.exe');
-      const preferred = mode === 'old' ? oldExe : newExe;
-      const fallback = mode === 'old' ? newExe : oldExe;
-      const exePath = fs.existsSync(preferred) ? preferred : (fs.existsSync(fallback) ? fallback : '');
+      const newCandidates = [
+        path.join(root, 'intrument.exe'),
+        path.join(root, 'instrument.exe'),
+        path.join(root, 'NocLauncher.exe')
+      ];
+      const oldCandidates = [
+        path.join(root, 'intrumente2', 'NocLauncher.exe'),
+        path.join(root, 'intrumente2', 'intrument.exe'),
+        path.join(root, 'intrumente2', 'instrument.exe')
+      ];
+      const preferredList = mode === 'old' ? oldCandidates : newCandidates;
+      const fallbackList = mode === 'old' ? newCandidates : oldCandidates;
+      const exePath = [...preferredList, ...fallbackList].find(p => fs.existsSync(p)) || '';
 
       if (!exePath) {
         await shell.openPath(root);
