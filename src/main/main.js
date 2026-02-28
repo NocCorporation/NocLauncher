@@ -636,11 +636,59 @@ function readBedrockIntegrityBaseline() {
   return null;
 }
 
+let protectionRuntimeDllDir = '';
+let protectionPreparedKey = '';
+
+function detectWindowsTag() {
+  try {
+    if (process.platform !== 'win32') return 'other';
+    const rel = String(os.release() || ''); // e.g. 10.0.22631
+    const parts = rel.split('.').map(x => Number(x) || 0);
+    const build = parts[2] || 0;
+    return build >= 22000 ? 'win11' : 'win10';
+  } catch (_) {
+    return 'win10';
+  }
+}
+
+function prepareWindowsProtectionRuntime() {
+  try {
+    if (process.platform !== 'win32') return { ok: false, skipped: true, reason: 'windows_only' };
+
+    const winTag = detectWindowsTag();
+    const arch = process.arch || 'x64';
+    const key = `${winTag}-${arch}`;
+    if (protectionPreparedKey === key && protectionRuntimeDllDir && fs.existsSync(protectionRuntimeDllDir)) {
+      return { ok: true, cached: true, dir: protectionRuntimeDllDir, target: key };
+    }
+
+    const sourceCandidates = [
+      path.join(APP_ROOT, 'dll'),
+      path.join(process.resourcesPath, 'dll')
+    ];
+    const src = sourceCandidates.find(p => fs.existsSync(path.join(p, 'manifest.json')) && fs.existsSync(p));
+    if (!src) return { ok: false, skipped: true, reason: 'dll_bundle_not_found' };
+
+    const dest = path.join(app.getPath('userData'), 'protection', key, 'dll');
+    try { fs.mkdirSync(path.dirname(dest), { recursive: true }); } catch (_) {}
+
+    // Fast sync: overwrite destination with the current bundled protection files.
+    _nativeFs.cpSync(src, dest, { recursive: true, force: true });
+
+    protectionRuntimeDllDir = dest;
+    protectionPreparedKey = key;
+    return { ok: true, dir: dest, source: src, target: key };
+  } catch (e) {
+    return { ok: false, error: String(e?.message || e) };
+  }
+}
+
 function resolveDllBundleDir() {
   const candidates = [
+    protectionRuntimeDllDir,
     path.join(APP_ROOT, 'dll'),
     path.join(process.resourcesPath, 'dll')
-  ];
+  ].filter(Boolean);
   return candidates.find(p => fs.existsSync(p)) || '';
 }
 
@@ -5723,6 +5771,14 @@ ipcMain.handle('bedrock:launch', async () => {
         error: 'Minecraft for Windows не установлен. Открыл Microsoft Store — установи игру и попробуй снова.',
         logPath: bedrockLogPath || ''
       };
+    }
+
+    // Prepare OS-aware protection bundle location (win10/win11 + arch) before integrity flows.
+    try {
+      const prep = prepareWindowsProtectionRuntime();
+      appendBedrockLaunchLog(`INFO: protection_runtime_prepare=${JSON.stringify(prep)}`);
+    } catch (e) {
+      appendBedrockLaunchLog(`WARN: protection_runtime_prepare_failed=${String(e?.message || e)}`);
     }
 
     // Mods baseline restore: enforce clean DLL set before every launch.
