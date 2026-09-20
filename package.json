@@ -1,7 +1,7 @@
 {
   "name": "noclauncher",
   "version": "1.0.7",
-  "description": "NocLauncher — multi-functional Minecraft launcher (Electron)",
+  "description": "NocLauncher \u2014 multi-functional Minecraft launcher (Electron)",
   "main": "src/main/main.js",
   "author": "NOCTRAZE",
   "license": "MIT",
@@ -100,5 +100,8 @@
       "perMachine": false
     }
   },
-  "type": "commonjs"
+  "type": "commonjs",
+  "overrides": {
+    "axios": "1.18.0"
+  }
 }
