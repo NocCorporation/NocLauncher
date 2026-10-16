@@ -16,15 +16,16 @@
   },
   "dependencies": {
     "adm-zip": "^0.5.10",
+    "archiver": "^7.0.1",
     "electron-store": "^8.2.0",
+    "form-data": "^2.5.4",
     "graceful-fs": "^4.2.11",
     "minecraft-launcher-core": "^3.18.0",
     "msmc": "^5.0.5",
     "node-fetch": "^3.3.2",
+    "prismarine-auth": "^2.6.0",
     "prismarine-nbt": "^2.8.0",
-    "archiver": "^7.0.1",
-    "unzipper": "^0.12.3",
-    "prismarine-auth": "^2.6.0"
+    "unzipper": "^0.12.3"
   },
   "devDependencies": {
     "electron": "^29.4.5",
